@@ -28,3 +28,4 @@
 switch between buffers, an Emacs frame loses focus, etc.  You can think of
 it as an enhanced `auto-save-mode'")
       (license license:gpl3+))))
+
