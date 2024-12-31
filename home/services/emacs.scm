@@ -1,0 +1,18 @@
+(define-module (home services emacs)
+  #:use-module (gnu)
+  #:use-module (gnu home)
+  #:use-module (gnu home services)
+  #:use-module (gnu packages emacs)
+  #:use-module (home packages emacs))
+
+(define (home-emacs-config-profile-service config)
+  (list emacs emacs-super-save))
+
+(define home-emacs-config-service-type
+  (service-type (name 'home-emacs-config)
+		(description "A service for configuring Emacs.")
+		(extensions
+		 (list (service-extension
+			home-profile-service-type
+			home-emacs-config-profile-service))
+		 (default-value #f))))
