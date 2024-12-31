@@ -1,24 +1,22 @@
 (define-module (etc systems arraniz)
   #:use-modules (gnu)
   #:use-modules (guix)
-  #:use-modules (etc systems base-system))
-
-(use-modules (gnu)
-	     (gnu system nss)
-	     (gnu packages wm)
-	     (gnu packages admin)
-	     (gnu packages pulseaudio)
-	     (gnu packages terminals)
-	     (gnu packages xdisorg)
-	     (gnu packages image)
-	     (gnu packages xorg)
-	     (gnu packages version-control)
-	     (gnu packages emacs)
-	     (gnu packages gnome)
-	     (gnu services desktop)
-	     (gnu services dbus)
-	     (nongnu packages linux)
-	     (gnu services base))
+  #:use-modules (etc systems base-system)
+  #:use-modules (gnu system nss)
+  #:use-modules (gnu packages wm)
+  #:use-modules (gnu packages admin)
+  #:use-modules (gnu packages pulseaudio)
+  #:use-modules (gnu packages terminals)
+  #:use-modules (gnu packages xdisorg)
+  #:use-modules (gnu packages image)
+  #:use-modules (gnu packages xorg)
+  #:use-modules (gnu packages version-control)
+  #:use-modules (gnu packages emacs)
+  #:use-modules (gnu packages gnome)
+  #:use-modules (gnu services desktop)
+  #:use-modules (gnu services dbus)
+  #:use-modules (nongnu packages linux)
+  #:use-modules (gnu services base))
 
 (use-service-modules desktop dbus networking xorg)
 (use-package-modules wm fonts linux)
@@ -58,10 +56,11 @@
 		    swaylock
 		    swayidle
 		    alacritty
+		    pipewire
+		    wireplumber
 		    git
 		    network-manager
 		    network-manager-applet
-		    pulseaudio
 		    brightnessctl
 		    wlgreet
 		    xorg-server-xwayland
@@ -104,12 +103,12 @@
     (service wpa-supplicant-service-type)
     (service elogind-service-type)
     (service ntp-service-type)
-    ;;(service docker-service-type)
-    ;;(service tlp-service-type)
     (service upower-service-type)
     (service udisks-service-type)
     (service polkit-service-type)
     (service dbus-root-service-type)
+    (service xdg-desktop-portal-service-type)
+    (service xdg-desktop-portal-wlr-service-type)
     (udev-rules-service 'brightnessctl brightnessctl)
     (service console-font-service-type
 	     (map (lambda (tty)

@@ -3,19 +3,17 @@
 (define-module (home users bfh)
   #:use-modules (gnu)
   #:use-modules (gnu home)
-  #:use-modules (home services emacs))
-
-(use-modules (gnu home)
-	     (gnu packages)
-	     (gnu services)
-	     (gnu home services)
-	     (gnu home services shells)
-	     (gnu home services pm)
-	     (gnu home services sound)
-	     (gnu home services desktop)
-	     (gnu home services xdg)
-	     (gnu packages glib)
-	     (guix gexp))
+  #:use-modules (home services emacs)
+  #:use-modules	(gnu packages)
+  #:use-modules (gnu services)
+  #:use-modules (gnu home services)
+  #:use-modules (gnu home services shells)
+  #:use-modules (gnu home services pm)
+  #:use-modules (gnu home services sound)
+  #:use-modules (gnu home services desktop)
+  #:use-modules (gnu home services xdg)
+  #:use-modules (gnu packages glib)
+  #:use-modules (guix gexp) )
 
 (home-environment
  ;; Packages installed to user profile
@@ -155,6 +153,5 @@ export _JAVA_AWT_WM_NONREPARENTING=1")))
 fi")))))
    
    ;; Sound service (Pipewire)
-   ;;(service home-pipewire-service-type)
-   ;; requires dbus
+   (service home-pipewire-service-type)
    )))
