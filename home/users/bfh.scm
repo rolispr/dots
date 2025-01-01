@@ -1,21 +1,22 @@
 ;; -*- mode: scheme; -*-
 
 (define-module (home users bfh)
-  #:use-modules (gnu)
-  #:use-modules (gnu home)
-  #:use-modules	(gnu packages)
-  #:use-modules (gnu services)
-  #:use-modules (gnu home services)
-  #:use-modules (home services bash)
-  #:use-modules (home services emacs)
-  #:use-modules (gnu home services pm)
-  #:use-modules (gnu home services sound)
-  #:use-modules (gnu home services desktop)
-  #:use-modules (gnu home services xdg)
-  #:use-modules (gnu packages glib)
-  #:use-modules (guix gexp))
+  #:use-module (guix gexp)
+  #:use-module (guix files)
+  #:use-module (guix modules)
+  #:use-module (gnu home)
+  #:use-module (gnu home services)
+  #:use-module (gnu home services pm)
+  #:use-module (gnu home services sound)
+  #:use-module (gnu home services desktop)
+  #:use-module (gnu home services xdg)
+  #:use-module (gnu packages)
+  #:use-module (gnu packages glib)
+  #:use-module (gnu services)
+  #:use-module (home services bash)
+  #:use-module (home services emacs))
 
-(define config-dir "~/dots/home/config")
+(define config-dir (string-append (getenv "HOME") "/dots/home/config"))
 
 (home-environment
  (packages
@@ -23,7 +24,7 @@
    (list "guile"
 	 ;;	 "emacs-treesitter-langs"
 	 ;;	 "emacs-shr-tag-pre-highlight"
-	 "dot"
+;;	 "dot"
 	 "wofi"
 	 "git"
 	 "ripgrep"

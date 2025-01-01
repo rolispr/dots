@@ -1,8 +1,8 @@
 (define-module (home packages emacs)
   #:use-module (guix packages)
   #:use-module (guix git-download)
-  #:use-module (guix build-system)
-  #:use-module (guix licenses)
+  #:use-module (guix build-system emacs)
+  #:use-module ((guix licenses) #:prefix license:)
   #:export (emacs-super-save))
 
 (define-public emacs-super-save
