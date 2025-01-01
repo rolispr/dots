@@ -3,8 +3,11 @@
   #:use-module (gnu home)
   #:use-module (gnu home services)
   #:use-module (gnu packages emacs)
+  #:use-module (gnu packages emacs-xyz)
   #:use-module (home packages emacs)
   #:export (home-emacs-config-service-type))
+
+(define config-dir (string-append (getenv "HOME") "/dots/home/config"))
 
 (define (home-emacs-config-profile-service config)
   (list emacs-next-pgtk       ;; Changed from emacs to emacs-next-pgtk since that's what you use
@@ -16,6 +19,7 @@
 	emacs-corfu
 	emacs-orderless
 	emacs-embark
+	emacs-dash
 	emacs-mini-echo
 	emacs-guix
 	emacs-eat
@@ -26,12 +30,12 @@
 	emacs-keycast
 	emacs-evil-collection
 	emacs-vundo
-	emacs-vim-tab-bar
+;;	emacs-vim-tab-bar
 	emacs-cape
 	emacs-marginalia
 	emacs-git-gutter
 	emacs-git-gutter-fringe
-	emacs-tabspaces
+;;	emacs-tabspaces
 	emacs-kind-icon
 	emacs-nerd-icons
 	emacs-all-the-icons
@@ -49,8 +53,8 @@
 	emacs-lua-mode
 	emacs-terraform-mode
 	emacs-fennel-mode
-	emacs-cider-mode
-	emacs-css-mode
+	emacs-cider
+;;	emacs-css
 	emacs-web-mode
 	emacs-sly
 	emacs-sly-asdf
@@ -58,14 +62,18 @@
 	emacs-org
 	emacs-emms
 	emacs-dirvish
-	emacs-dired-subtree
+;;	emacs-dired-subtree
 	emacs-magit
 	emacs-super-save))
 
 (define (home-emacs-config-files-service config)
-  `(("emacs" 
-     ,(local-file (string-append (getenv "HOME") "/dots/home/config/emacs/.emacs.d")
-		  #:recursive? #t))))
+    `(("emacs/early-init.el"
+     ,(local-file (string-append config-dir "/emacs/emacs.d/early-init.el")))
+    ("emacs/init.el"
+     ,(local-file (string-append config-dir "/emacs/emacs.d/init.el")))))
+;;  `(("emacs" 
+;;     ,(local-file (string-append (getenv "HOME") "/dots/home/config/emacs/emacs.d")
+;;		  #:recursive? #t))))
 
 (define home-emacs-config-service-type
   (service-type 

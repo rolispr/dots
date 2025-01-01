@@ -1,22 +1,24 @@
 (define-module (etc systems arraniz)
-  #:use-modules (gnu)
-  #:use-modules (guix)
-  #:use-modules (etc systems base-system)
-  #:use-modules (gnu system nss)
-  #:use-modules (gnu packages wm)
-  #:use-modules (gnu packages admin)
-  #:use-modules (gnu packages pulseaudio)
-  #:use-modules (gnu packages terminals)
-  #:use-modules (gnu packages xdisorg)
-  #:use-modules (gnu packages image)
-  #:use-modules (gnu packages xorg)
-  #:use-modules (gnu packages version-control)
-  #:use-modules (gnu packages emacs)
-  #:use-modules (gnu packages gnome)
-  #:use-modules (gnu services desktop)
-  #:use-modules (gnu services dbus)
-  #:use-modules (nongnu packages linux)
-  #:use-modules (gnu services base))
+  #:use-module (gnu)
+  #:use-module (guix)
+  #:use-module (etc systems base-system)
+  #:use-module (gnu system nss)
+  #:use-module (gnu packages freedesktop)
+  #:use-module (gnu packages wm)
+  #:use-module (gnu packages admin)
+  #:use-module (gnu packages pulseaudio)
+  #:use-module (gnu packages terminals)
+  #:use-module (gnu packages xdisorg)
+  #:use-module (gnu packages image)
+  #:use-module (gnu packages xorg)
+  #:use-module (gnu packages version-control)
+  #:use-module (gnu packages emacs)
+  #:use-module (gnu packages fonts)
+  #:use-module (gnu packages gnome)
+  #:use-module (gnu services desktop)
+  #:use-module (gnu services dbus)
+  #:use-module (nongnu packages linux)
+  #:use-module (gnu services base))
 
 (use-service-modules desktop dbus networking xorg)
 (use-package-modules wm fonts linux)
@@ -27,10 +29,11 @@
 
  (kernel linux)
  (firmware (list linux-firmware))
+ (keyboard-layout base-keyboard-layout)
  (bootloader (bootloader-configuration
 	      (bootloader grub-efi-bootloader)
 	      (targets '("/boot/efi"))
-	      (keyboard-layout keyboard-layout)))
+	      (keyboard-layout base-keyboard-layout)))
  (file-systems (append
 		(list (file-system
 		       (device (file-system-label "root"))
@@ -64,6 +67,8 @@
 		    brightnessctl
 		    wlgreet
 		    xorg-server-xwayland
+		    xdg-desktop-portal
+		    xdg-desktop-portal-wlr
 		    ;;		     man-pages
 		    ;;		     openssh
 		    ;;		     pwgen
@@ -107,8 +112,8 @@
     (service udisks-service-type)
     (service polkit-service-type)
     (service dbus-root-service-type)
-    (service xdg-desktop-portal-service-type)
-    (service xdg-desktop-portal-wlr-service-type)
+;;    (service xdg-desktop-portal-service-type)
+;;   (service xdg-desktop-portal-wlr-service-type)
     (udev-rules-service 'brightnessctl brightnessctl)
     (service console-font-service-type
 	     (map (lambda (tty)

@@ -3,6 +3,7 @@
 (define-module (home services bash)
   #:use-module (gnu services)
   #:use-module (gnu home services shells)
+  #:use-module (guix gexp)
   #:export (%wayland-environment-vars
             home-bash-service))
 
