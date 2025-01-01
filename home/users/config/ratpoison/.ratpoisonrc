@@ -1,0 +1,50 @@
+exec /usr/bin/rpws init 9 -k
+exec /usr/share/ratpoison/sloppy
+exec ratpoison -c "banish"
+set winname title
+set wingravity center
+set bargravity center
+set border 3
+set barborder 3
+set barpadding 1 1
+#set font "FiraCode:size=12"
+#set font 'spleen...'
+
+escape C-z
+bind 1 exec rpws 1
+bind 2 exec rpws 2
+bind 3 exec rpws 3
+bind 4 exec rpws 4
+bind 5 exec rpws 5
+bind 6 exec rpws 6
+bind 7 exec rpws 7
+bind 8 exec rpws 8
+bind 9 exec rpws 9
+
+exec xsetroot -solid black -cursor_name left_ptr
+exec alacritty
+
+bind e exec emacs
+bind c exec alacritty
+
+defwinname name
+
+
+#do i need these?
+
+# bind M-! to store the current frame layout in slot #1
+bind M-exclam exec ratpoison -c "setenv fs1 `ratpoison -c 'fdump'`"
+
+#bind M-1 to restore the frame layout in slot #1
+bind M-1 exec ratpoison -c "frestore `ratpoison -c 'getenv fs1'`"
+
+# Do the same for slot #2 and bind it to M-@ and M-2, respectively.
+bind M-at exec ratpoison -c "setenv fs2 `ratpoison -c 'fdump'`"
+bind M-2 exec ratpoison -c "frestore `ratpoison -c 'getenv fs2'`"
+
+# Give ourselves another slot on M-# and M-3, respectively.
+bind M-numbersign exec ratpoison -c "setenv fs3 `ratpoison -c 'fdump'`"
+bind M-3 exec ratpoison -c "frestore `ratpoison -c 'getenv fs3'`"
+
+# Here's a hack from John Meacham:
+bind a exec ratpoison -d :0.0 -c "echo `date +'%r - %A %n    %D - %B'`  `cal | tail -n +2 | sed -e 's/^Su/\n\n Su/' -e 's/.*/ & /' -e \"s/\ $(date +%e)\ /\<$(date +%e)\>/\"`"

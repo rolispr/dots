@@ -1,0 +1,31 @@
+vim9script
+
+packadd lsp
+packadd scratch
+
+
+var stuff = {
+	name: 'golang',
+	filetype: ['go', 'gomod'],
+	path: '/usr/local/bin/gopls',
+	args: ['serve'],
+	syncInit: v:true
+}
+
+syntax enable
+colorscheme zaibatsu
+g:mapleader = "\<Space>"
+#set g:maplocalleader="\<Space>"
+set noswapfile
+set cursorline
+set t_Co=16
+set hlsearch
+set incsearch
+set backspace=indent,eol,start
+set number relativenumber
+set cdhome
+set wildmenu
+set wildoptions=pum
+
+inoremap <c-a> <esc>I
+inoremap <c-e> <esc>A

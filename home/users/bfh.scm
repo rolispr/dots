@@ -52,7 +52,7 @@
    ;; Sway configuration
    (service home-xdg-configuration-files-service-type
 	    `(("sway/config"
-	       ,(plain-file "sway-config"
+	       ,(local-file "sway-config"
 			    "# Sway config
 exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
 exec waybar

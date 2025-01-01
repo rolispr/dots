@@ -1,0 +1,2 @@
+!#/bin/bash
+STARSHIP_CONFIG=~/.config/tmux/starship.toml starship prompt

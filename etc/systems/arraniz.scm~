@@ -1,0 +1,3 @@
+(define-module (etc systems arraniz)
+  #:use-modules (gnu)
+  #:use-modules (guix))

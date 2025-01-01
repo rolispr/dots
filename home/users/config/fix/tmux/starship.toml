@@ -1,0 +1,249 @@
+add_newline = false
+
+format = """\
+$directory\
+$package\
+$git_branch\
+$git_commit\
+$git_state\
+$git_status\
+$memory_usage\
+$battery\
+$time"""
+
+[time]
+disabled = false
+format = "[ $time ]($style)"
+time_format = "%T"
+style = ""
+#[time]
+#format = "[]($style)[  $time ]($style)"
+#style = "fg:black bg:bright-green"
+#time_format = "%H:%M"
+#disabled = false
+#
+[git_branch]
+format = '[  $branch]($style)'
+style = 'fg:bright-blue italic'
+truncation_length = 9223372036854775807
+truncation_symbol = '…'
+only_attached = false
+always_show_remote = true
+disabled = false
+
+[git_commit]
+format = '[\($hash$tag\)]($style)'
+style = 'fg:blue dimmed'
+commit_hash_length = 7
+only_detached = false
+tag_symbol = ' 笠'
+tag_disabled = false
+disabled = false
+
+[git_state]
+format = '\( [$state($progress_current/$progress_total)]($style)\)'
+style = 'fg:blue dimmed'
+rebase = 'REBASING'
+merge = 'MERGING'
+revert = 'REVERTING'
+cherry_pick = 'CHERRY-PICKING'
+bisect = 'BISECTING'
+am = 'AM'
+am_or_rebase = 'AM/REBASE'
+disabled = false
+
+[git_status]
+format = '[\[$all_status$ahead_behind\]]($style)[ ]($style)'
+style = 'fg:cyan dimmed bold'
+stashed = '\$'
+ahead = '⇡${count}'
+behind = '⇣${count}'
+diverged = '⇕⇡${ahead_count}⇣${behind_count}'
+conflicted = '='
+deleted = '✘'
+renamed = '»'
+modified = '!'
+staged = '+'
+untracked = '?'
+disabled = false
+
+[directory]
+format = '[]($style)[$read_only]($read_only_style)[$path]($style)'
+truncation_length = 3
+truncate_to_repo = false
+fish_style_pwd_dir_length = 0
+use_logical_path = true
+style = 'bg:blue fg:black'
+read_only_style = 'bg:blue fg:200'
+read_only = '[]'
+truncation_symbol = '…'
+disabled = false
+
+[directory.substitutions]
+"~/.config" = " "
+"~/.workspace/rust" = ""
+"~/.workspace/docker" = " "
+"~/.workspace/alpine" = " "
+"~/.workspace/arch" = " "
+"~/.workspace/kustomize" = "ﴱ "
+"~/.workspace/node" = ""
+"~/.workspace" = " "
+"~/scm" = " "
+"~" = " "
+
+[package]
+format = '[  $version]($style)[ ]($style)'
+style = 'cyan'
+display_private = true
+disabled = false
+
+[battery]
+format = "[ $symbol$percentage]($style) "
+charging_symbol = ' '
+discharging_symbol = ' '
+disabled = false
+
+[[battery.display]]
+threshold = 10
+style = "red"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 20
+style = "red"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 30
+style = "yellow"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 40
+style = "yellow"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 50
+style = "blue"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 60
+style = "blue"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 70
+style = "blue"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 80
+style = "green"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 90
+style = "green"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[[battery.display]]
+threshold = 100
+style = "green"
+charging_symbol = ' '
+discharging_symbol = ' '
+
+[memory_usage]
+format = "[  ${ram}]($style)"
+style = "fg:bright-cyan"
+threshold = -1
+disabled = true
+
+[custom.kakfile]
+description = 'The current Kakoune buffername'
+format = '[/$output ]($style)[]($style inverted)'
+style = 'bold bg:blue fg:black'
+command = 'echo -n ${kak_buffile##*/}'
+when = 'true'
+shell = ['sh']
+disabled = false
+
+[custom.kaksession]
+description = 'The current Kakoune session'
+format = '[]($style)[  %val{client}:%val{session} ]($style)[]($style inverted)'
+style = 'bg:yellow fg:black italic'
+when = ''
+shell = ['true']
+disabled = true
+
+[custom.kakcursor]
+description = 'The current Kakoune cursor position'
+format = '[%val{cursor_line}:%val{cursor_char_column}]($style)'
+style = 'fg:white'
+when = ''
+shell = ['true']
+disabled = false
+
+[custom.kakmode]
+description = 'The current Kakoune mode'
+format = ' {{mode_info}}'
+when = ''
+shell = ['true']
+disabled = false
+
+[custom.kakcontext]
+description = 'The current Kakoune context'
+format = ' {{context_info}}'
+when = ''
+shell = ['true']
+disabled = false
+
+[custom.kakfiletype]
+description = 'The current buffer filetype'
+format = '\[%opt{filetype}\] '
+when = ''
+shell = ['true']
+disabled = true
+
+[custom.kakposition]
+description = 'Relative position of the cursor inside the buffer'
+format = '[  $output]($style)[ ]($style)'
+style = 'white'
+command = 'echo -n $(($kak_cursor_line * 100 / $kak_buf_line_count))%'
+when = '[ -n "$kak_cursor_line" ]'
+shell = ['sh']
+disabled = false
+
+[custom.kaktime]
+description = "Alternate time segment using kakoune evaluation"
+format = "[]($style)[  %sh{date +%T} ]($style)"
+style = "fg:black bg:bright-green"
+when = ''
+shell = ['true']
+disabled = true
+
+[custom.kaklsp_err]
+description = "Show errors number from kak-lsp if any"
+format = "[  %opt{lsp_diagnostic_error_count}]($style)"
+style = "red bold"
+when = '[ -n "$kak_opt_lsp_diagnostic_error_count" -a "$kak_opt_lsp_diagnostic_error_count" -ne 0 ]'
+shell = ['sh']
+disabled = false
+
+[custom.kaklsp_warn]
+description = "Show warnings number from kak-lsp if any"
+format = "[  %opt{lsp_diagnostic_warning_count}]($style)"
+style = "yellow bold"
+when = '[ -n "$kak_opt_lsp_diagnostic_warning_count" -a "$kak_opt_lsp_diagnostic_warning_count" -ne 0 ]'
+shell = ['sh']
+disabled = false

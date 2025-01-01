@@ -1,0 +1,20 @@
+#!/bin/sh
+Selection=true
+Name=Stumpwm
+Exec=/home/bfh/stumpwm.ros
+Environment=xorg
+
+# xrandr --output eDP1 --mode 1920x1080
+xrdb -merge ~/.Xresources
+
+# source /etc/profile does not have any effect
+. /etc/profile
+. ~/.bashrc
+
+export BROWSER=firefox
+export EDITOR=emacs
+
+picom &
+pipewire &
+wireplumber &
+exec dbus-launch $@

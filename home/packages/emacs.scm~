@@ -1,0 +1,6 @@
+(define-module (home packages emacs)
+  #:use-module (guix packages)
+  #:use-module (guix git-download)
+  #:use-module (guix build-system)
+  #:use-module (guix licenses)
+  #:export (emacs-pkg-name))

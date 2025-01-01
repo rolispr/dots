@@ -1,0 +1,4 @@
+[Desktop Entry]
+Name=Ratpoison
+Comment=Tiling, keyboard driven C window manager
+Exec=ratpoison

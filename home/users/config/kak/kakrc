@@ -1,0 +1,13 @@
+set global ui_options terminal_status_on_top=true
+#hook global BufWritePre .* %{ %sh{
+#      container=$(dirname "$kak_hook_param")
+#        test -d "$container" ||
+#            mkdir --parents "$container"
+#}}
+# Width of a tab
+set-option global tabstop 4
+
+# Indent with 4 spaces
+set-option global indentwidth 4
+face global MenuForeground default,default
+face global MenuBackground default,default

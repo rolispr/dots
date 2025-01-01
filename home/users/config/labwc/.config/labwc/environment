@@ -1,0 +1,10 @@
+# This allows xdg-desktop-portal-wlr to function (e.g. for screen-recording)
+XDG_CURRENT_DESKTOP=wlroots
+XKB_DEFAULT_OPTIONS=ctrl:nocaps
+XKB_DEFAULT_LAYOUT=us
+MOZ_ENABLE_WAYLAND=1
+# Find icons themes with the command below or similar:
+#     find /usr/share/icons/ -type d -name "cursors"
+XCURSOR_THEME=breeze_cursors
+WLR_NO_HARDWARE_CURSORS=1
+_JAVA_AWT_WM_NONREPARENTING=1

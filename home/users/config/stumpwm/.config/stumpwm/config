@@ -1,0 +1,119 @@
+;;; -*- mode: lisp -*-
+(in-package :stumpwm)
+(init-load-path #p"/usr/share/stumpwm/contrib/")
+;;(ql:quickload :clx-truetype)
+(load-module "swm-gaps")
+(load-module "kbd-layouts")
+(load-module "battery-portable")
+(load-module "ttf-fonts")
+;;(setq *debug-level* 5)
+;;(redirect-all-output (data-dir-file "debug-output" "txt"))
+
+(set-prefix-key (kbd "C-z"))
+(setf swm-gaps:*head-gaps-size* 0
+      swm-gaps:*inner-gaps-size* 9
+      swm-gaps:*outer-gaps-size* 0)
+
+(xft:cache-fonts)
+(set-font (make-instance 'xft:font :family "FiraCode Nerd Font" :subfamily "Regular" :size 12))
+
+(setf *colors*
+      '("#000000"
+        "#BF6262"
+        "#a1bf78"
+        "#dbb774"
+        "#7D8FA3"
+        "#ff99ff"
+        "#ffffff"))
+
+(update-color-map (current-screen))
+
+(set-focus-color (third *colors*))
+
+(setf *mode-line-border-color* (third *colors*))
+(setf *window-format* "%m%s%50t")
+(setf *mode-line-background-colors* (car *colors*)
+      *mode-line-foreground-colors* (car (last *colors*)))
+
+(setf *message-window-gravity* :center
+      *window-border-style* :thin
+      *message-window-padding* 3
+      *maxsize-border-width* 2
+      *normal-border-width* 2
+      *transient-border-width* 2
+      stumpwm::*float-window-border* 1
+      stumpwm::*float-window-title-height* 1)
+
+(setf *input-window-gravity* :center)
+(setf *message-window-input-gravity* :left)
+(setf *mouse-focus-policy* :sloppy)
+(setf kbd-layouts:*caps-lock-behavior* :ctrl)
+(kbd-layouts:keyboard-layout-list "us")
+(run-shell-command "xsetroot -cursor_name left_ptr")
+
+(setf *time-modeline-string* "%a, %b %d %I:%M%p")
+(setf *screen-mode-line-format*
+      (list
+       " ^6[^B^4%n^6^b] "
+       "^>"
+       "^3"
+       "%d"
+       " ^6[^n%B^6]^n "))
+
+(when *initializing*
+  (swm-gaps:toggle-gaps)
+  (mode-line))
+
+ ;; helpers
+;;(defcommand slynk (port) ((:string "Port number: "))
+;;  (sb-thread:make-thread
+;;   (lambda ()
+;;     (slynk:create-server :port (parse-integer port) :dont-close t))
+;;   :name "slynk-manual"))
+
+(defcommand term (&optional prg) ()
+  (run-shell-command (if prg
+                         (format nil "alacritty -e ~A" prg)
+                         "alacritty")))
+
+(defun find-window-by-title (title)
+  (find-if (lambda (window) (string= (window-title window) title))
+	     (all-windows)))
+
+;;(find-window-by-title "main")
+
+(defun position-emacs-frames ()
+  (let ((main-frame (find-window-by-title "main"))
+	(mb-frame (find-window-by-title "mb")))
+    (if (and main-frame mb-frame)
+	(progn
+	  (select-window mb-frame)
+	  (resize)
+	  (focus-window main-frame)
+	  (move-window )))))
+
+;;(current-screen)
+
+
+
+(defcommand set-backlight (level) ((:number "Set brightness level:"))
+  (with-open-file (sys-backlight-file "/sys/class/backlight/intel_backlight/brightness"
+                                      :direction :output :if-exists :overwrite)
+    (format sys-backlight-file "~a~%" (* 100 level))))
+
+;; C-u [1-9] changes level
+(defvar *brightness-map* nil)
+(setf *brightness-map*
+      (let ((b (make-sparse-keymap)))
+        (loop for level from 1 below 10 by 1 do
+             (define-key b (kbd (write-to-string level))
+               (format nil "set-backlight ~a" level)))
+        b))
+
+
+(define-key *root-map* (kbd "u") '*brightness-map*)
+(define-key *root-map* (kbd "c") "term")
+(define-key *top-map* (kbd "XF86MonBrightnessDown") "set-backlight 1")
+(define-key *top-map* (kbd "XF86MonBrightnessUp") "set-backlight 9")
+;;(refresh-heads)
+

@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Stumpwm
+Comment=Tiling, keyboard driven Common Lisp window manager
+Exec=/home/bfh/stumpwm.ros
+Type=Application
