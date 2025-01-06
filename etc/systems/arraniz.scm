@@ -15,8 +15,10 @@
   #:use-module (gnu packages emacs)
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages gnome)
+  #:use-module (gnu packages ssh)
   #:use-module (gnu services desktop)
   #:use-module (gnu services dbus)
+  #:use-module (gnu services ssh)
   #:use-module (nongnu packages linux)
   #:use-module (gnu services base))
 
@@ -54,6 +56,7 @@
 	      %base-user-accounts))
 
  (packages (append (list
+		    openssh
 		    sway
 		    waybar
 		    swaylock
@@ -108,12 +111,21 @@
     (service wpa-supplicant-service-type)
     (service elogind-service-type)
     (service ntp-service-type)
+    (service openssh-service-type
+	     (openssh-configuration
+	      (permit-root-login #f)
+	      (allow-empty-passwords? #f)
+	      (password-authentication? #t)
+	      (max-connections 4)
+;;	      (port-number 10111)
+	      (x11-forwarding? #f)
+	      (allow-agent-forwarding? #t)))
     (service upower-service-type)
     (service udisks-service-type)
     (service polkit-service-type)
     (service dbus-root-service-type)
-;;    (service xdg-desktop-portal-service-type)
-;;   (service xdg-desktop-portal-wlr-service-type)
+    ;;(service xdg-desktop-portal-service-type)
+    ;;(service xdg-desktop-portal-wlr-service-type)
     (udev-rules-service 'brightnessctl brightnessctl)
     (service console-font-service-type
 	     (map (lambda (tty)
