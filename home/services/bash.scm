@@ -25,11 +25,11 @@
            (home-bash-configuration
             (aliases '(("ll" . "ls -l")
                        ("la" . "ls -la")
-		       ("update-system" . "sudo guix system -L ~/dots reconfigure ~/dots/etc/systems/arraniz.scm")
+		       ("update-system" . "sudo -E guix system -L ~/dots reconfigure ~/dots/etc/systems/arraniz.scm")
 		       ("update-home" . "guix home -L ~/dots reconfigure ~/dots/home/users/bfh.scm")))
             (environment-variables %wayland-environment-vars)
             (bashrc
              (list (local-file (string-append config-dir "/shell/bashrc"))))
             (bash-profile
              (list (plain-file "bash-profile"
-                              "if [ -z $DISPLAY ] && [ $(tty) = /dev/tty1 ]; then exec sway fi"))))))
+                              "if [ -z $DISPLAY ] && [ $(tty) = /dev/tty1 ]; then exec sway; fi"))))))

@@ -16,14 +16,66 @@
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages ssh)
+  #:use-module (gnu packages lisp)
+  #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu services desktop)
   #:use-module (gnu services dbus)
   #:use-module (gnu services ssh)
   #:use-module (nongnu packages linux)
-  #:use-module (gnu services base))
+  #:use-module (gnu services base)
+  #:use-module (etc packages stumpwm))
 
 (use-service-modules desktop dbus networking xorg)
 (use-package-modules wm fonts linux)
+
+(define %stumpwm-packages
+  (list sbcl
+        stumpwm-dev+servers ;; custom package
+        sbcl-parse-float ;;|--> gnu packages lisp-xyz
+        sbcl-local-time
+        sbcl-cl-ppcre
+        sbcl-zpng
+        sbcl-salza2
+        sbcl-clx
+        sbcl-zpb-ttf
+        sbcl-cl-vectors
+        sbcl-cl-store
+        sbcl-trivial-features
+        sbcl-global-vars
+        sbcl-trivial-garbage
+        sbcl-bordeaux-threads
+        sbcl-cl-fad
+        sbcl-clx-truetype
+        ;; stumpwm-contrib packages
+        sbcl-stumpwm-ttf-fonts ;;|--> gnu packages wm;
+        sbcl-stumpwm-kbd-layouts
+        sbcl-stumpwm-swm-gaps
+        sbcl-stumpwm-globalwindows
+        sbcl-stumpwm-cpu
+        sbcl-stumpwm-mem
+        sbcl-stumpwm-wifi
+        sbcl-stumpwm-battery-portable))
+
+(define %guixos-system-packages
+  (list openssh
+	sway
+	waybar
+	swaylock
+	swayidle
+	pipewire
+	wireplumber
+	network-manager
+	network-manager-applet
+	brightnessctl
+	wlgreet
+	xorg-server-xwayland
+	xdg-desktop-portal
+	xdg-desktop-portal-wlr))
+	
+(define %guixos-base-packages
+  (append %stumpwm-packages
+	  %guixos-system-packages
+	  %base-packages))
 
 (operating-system
  (inherit base-system)
@@ -55,48 +107,7 @@
 	       (supplementary-groups '("wheel" "netdev" "audio" "video")))
 	      %base-user-accounts))
 
- (packages (append (list
-		    openssh
-		    sway
-		    waybar
-		    swaylock
-		    swayidle
-		    alacritty
-		    pipewire
-		    wireplumber
-		    git
-		    network-manager
-		    network-manager-applet
-		    brightnessctl
-		    wlgreet
-		    xorg-server-xwayland
-		    xdg-desktop-portal
-		    xdg-desktop-portal-wlr
-		    ;;		     man-pages
-		    ;;		     openssh
-		    ;;		     pwgen
-		    ;;		     unzip
-		    ;;		     zip
-		    ;;		     aspell
-		    ;;		     aspell-dict-en
-		    ;;		     mpv
-		    ;;		     mpd-mpc
-		    ;;		     asla-utils
-		    ;;		     curl
-		    ;;		     tree
-		    ;;		     msmtp
-		    ;;		     isync
-		    ;;		     git
-		    ;;		     make
-		    ;;		     gcc-toolchain
-		    ;;		     gvfs
-		    ;;		     htop
-		    ;;		     wget
-		    ;;		     curl
-		    ;;		     wl-clipboard
-		    ;;		     wofi
-		    )
-		   %base-packages))
+ (packages %guixos-base-packages)
 
  (services
   (append
