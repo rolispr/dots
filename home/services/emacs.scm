@@ -1,7 +1,12 @@
+
 (define-module (home services emacs)
   #:use-module (gnu)
   #:use-module (gnu home)
   #:use-module (gnu home services)
+  #:use-module (gnu packages aspell)
+  #:use-module (gnu packages gnupg)
+  #:use-module (gnu packages lisp-xyz)
+  #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages emacs)
   #:use-module (gnu packages emacs-xyz)
   #:use-module (home packages emacs)
@@ -10,37 +15,75 @@
 (define config-dir (string-append (getenv "HOME") "/dots/home/config"))
 
 (define (home-emacs-config-profile-service config)
-  (list emacs-next-pgtk       ;; Changed from emacs to emacs-next-pgtk since that's what you use
+  (list emacs-next-pgtk
 	emacs-geiser
-	emacs-ef-themes
+	;; UI Enhancements
+        emacs-ef-themes
 	emacs-doom-themes
-	emacs-vertico
-	emacs-vertico-posframe
-	emacs-corfu
-	emacs-orderless
-	emacs-embark
+	emacs-catppuccin-theme
+        emacs-which-key
+        emacs-which-key-posframe
+        emacs-posframe
+        emacs-doom-modeline
+        emacs-mini-echo
+        emacs-kind-icon
+        emacs-nerd-icons
+;;        emacs-nerd-icons-completion
+;;        emacs-vscode-icon
+;;        emacs-ligature
+;;        emacs-breadcrumb
+;;        emacs-ultra-scroll
+        ;; Completion
+;;        emacs-vertico 
+;;        emacs-orderless
+;;        emacs-consult
+;;        emacs-marginalia
+;;        emacs-corfu
+;;        emacs-cape
+	;; Evil & Window Management
+        emacs-evil
+        emacs-evil-collection
+        emacs-undo-fu
+        emacs-undo-fu-session
+        emacs-vundo
+	;; Dashboard & File Management
+;;        emacs-grid not in guix
+        emacs-enlight
+        emacs-dirvish
+	;;        emacs-dired-subtree
+	;; Development Tools
+        emacs-magit
+        emacs-transient
+        emacs-git-gutter
+        emacs-git-gutter-fringe
+;;        emacs-tree-sitter-langs
+        emacs-dtrt-indent
+        emacs-suggest
+        emacs-eros
 	emacs-dash
-	emacs-mini-echo
 	emacs-guix
 	emacs-eat
 	emacs-geiser-guile
-	emacs-evil
 	emacs-lispy
 	emacs-lispyville
 	emacs-keycast
-	emacs-evil-collection
-	emacs-vundo
-;;	emacs-vim-tab-bar
-	emacs-cape
-	emacs-marginalia
+	emacs-gptel
 	emacs-git-gutter
 	emacs-git-gutter-fringe
+	emacs-arei
+	;; Programming Language Support
+        emacs-rustic
+        emacs-go-mode
+        emacs-lua-mode
+        emacs-fennel-mode
+        emacs-terraform-mode
+        emacs-cider
+        emacs-web-mode
+        emacs-nix-mode
+        emacs-ansible
+;;        emacs-python
+        emacs-flymake-collection
 ;;	emacs-tabspaces
-	emacs-kind-icon
-	emacs-nerd-icons
-	emacs-all-the-icons
-	emacs-all-the-icons-dired
-	emacs-all-the-icons-completion
 	emacs-rainbow-delimiters
 	emacs-ligature
 	emacs-highlight
@@ -48,14 +91,6 @@
 	emacs-highlight-sexp
 	emacs-highlight-numbers
 	emacs-highlight-escape-sequences
-	emacs-rustic
-	emacs-go-mode
-	emacs-lua-mode
-	emacs-terraform-mode
-	emacs-fennel-mode
-	emacs-cider
-;;	emacs-css
-	emacs-web-mode
 	emacs-sly
 	emacs-sly-asdf
 	emacs-ansible
@@ -64,7 +99,8 @@
 	emacs-dirvish
 ;;	emacs-dired-subtree
 	emacs-magit
-	emacs-super-save))
+	))
+;;	emacs-super-save))
 
 (define (home-emacs-config-files-service config)
     `(("emacs/early-init.el"
@@ -87,4 +123,3 @@
 	   home-xdg-configuration-files-service-type
 	   home-emacs-config-files-service)))
    (default-value #t)))
-
