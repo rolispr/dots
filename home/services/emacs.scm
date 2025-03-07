@@ -104,9 +104,9 @@
 
 (define (home-emacs-config-files-service config)
     `(("emacs/early-init.el"
-     ,(local-file (string-append config-dir "/emacs/emacs.d/early-init.el")))
+     ,(local-file (string-append config-dir "/emacs/early-init.el")))
     ("emacs/init.el"
-     ,(local-file (string-append config-dir "/emacs/emacs.d/init.el")))))
+     ,(local-file (string-append config-dir "/emacs/init.el")))))
 ;;  `(("emacs" 
 ;;     ,(local-file (string-append (getenv "HOME") "/dots/home/config/emacs/emacs.d")
 ;;		  #:recursive? #t))))

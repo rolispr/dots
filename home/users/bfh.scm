@@ -17,8 +17,8 @@
   #:use-module (gnu services)
   #:use-module (home services bash)
   #:use-module (home services emacs)
-;;  #:use-module (home services home-impure-symlinks)
-;;  #:use-module (home services mutable-files)
+  #:use-module (home services home-impure-symlinks)
+  #:use-module (home services mutable-files)
   )
 
 (define config-dir (string-append (getenv "HOME") "/dots/home/config"))
@@ -171,8 +171,8 @@
                ,(local-file (string-append config-dir "/waybar/style.css")))
               ("common-lisp/source-registry.conf.d/guix.conf"
                ,(local-file (string-append config-dir "/common-lisp/source-registry.conf.d/guix.conf")))))
-;;   (service home-mutable-files-service-type)
 
+   (service home-mutable-files-service-type)
    (home-bash-service #:config-dir config-dir)
    (service home-dbus-service-type)
    (service home-emacs-config-service-type)
