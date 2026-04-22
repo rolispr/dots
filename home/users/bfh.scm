@@ -17,6 +17,9 @@
   #:use-module (gnu services)
   #:use-module (home services bash)
   #:use-module (home services emacs)
+  #:use-module (etc packages claude-code)
+  #:use-module (etc packages llama-cpp)
+  #:use-module (etc packages qwen-code)
 ;;  #:use-module (home services home-impure-symlinks)
 ;;  #:use-module (home services mutable-files)
   )
@@ -25,7 +28,9 @@
 
 (home-environment
  (packages
-  (specifications->packages
+  (append
+   (list claude-code llama-cpp-latest qwen-code)
+   (specifications->packages
    (list "guile"
          "guile-colorized"
          "guile-readline"
@@ -50,7 +55,7 @@
          "sbcl-trial"
          "fd"
          "jq"
-         "awscliv2"
+;;         "awscliv2"
          "font-spleen"
          "font-fira-code"
          "font-jetbrains-mono"
@@ -119,9 +124,10 @@
 
          "imagemagick"
 
-         "steam"
+         "niri"
+         ;;"steam"
          "gimp"
-         "aseprite"
+         ;;"aseprite"
          "aspell-dict-en"
          "hunspell-dict-en-us"
          "hunspell"
@@ -136,10 +142,10 @@
          "mupen64plus-audio-sdl"
          "mupen64plus-input-sdl"
          "mupen64plus-video-z64"
-         "sicp"
+         "book-sicp"
          "sbcl"
-	 "lem"
-	 "tiled"
+         "lem"
+         "tiled"
          "gammastep"
          "guile-ares-rs"
          "retroarch-assets"
@@ -148,7 +154,7 @@
 
          "flatpak"
 
-         )))
+         ))))
 
  (services
   (list

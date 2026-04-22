@@ -60,7 +60,7 @@
         emacs-dtrt-indent
         emacs-suggest
         emacs-eros
-	    emacs-dash
+	   ;; emacs-dash
 	    emacs-guix
 	    emacs-eat
 	    emacs-geiser-guile
