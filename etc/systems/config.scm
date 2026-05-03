@@ -1,4 +1,4 @@
-;;; THE system operating-system form. Every field reads from the
+;;; The system operating-system form. Every field reads from the
 ;;; settings layer via (system-setting 'key). Per-host differences
 ;;; live in per-host/<host>/system.scm as (system-overrides).
 ;;;

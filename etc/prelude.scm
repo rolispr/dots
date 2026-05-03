@@ -1,4 +1,4 @@
-;;; Shared settings-layer and helpers for the dots refactor.
+;;; Shared settings-layer and helpers
 ;;;
 ;;; (system-setting 'key)  — resolves override-<key> in (system-overrides)
 ;;;                          if present, falls back to default-<key> in
