@@ -87,25 +87,15 @@
                        "admin_adhoc"
                        "http_file_share"))
                     (allow-registration? #f)
+                    (c2s-require-encryption? #t)
+                    (s2s-require-encryption? #t)
+                    (s2s-secure-auth? #f)
                     (virtualhosts
                      (list
                       (virtualhost-configuration
-                       (domain domain)
-                       (extra-config
-                        (list
-                         "ssl = {"
-                         (string-append "  certificate = \""
-                                        cert-dir "/fullchain.pem\";")
-                         (string-append "  key = \""
-                                        cert-dir "/privkey.pem\";")
-                         "}")))))
-                    (extra-config
-                     (append
-                      (components->extra-config xmpp-components)
-                      (list
-                       "c2s_require_encryption = true"
-                       "s2s_require_encryption = true"
-                       "s2s_secure_auth = false"))))))
+                       (domain domain))))
+                    (int-components
+                     (components->int-components xmpp-components)))))
          (xmpp-certbot-service
           (service certbot-service-type
                    (certbot-configuration
@@ -125,8 +115,9 @@
                                           "herd restart prosody")))
                                (close-pipe port))))))))
                     (default-location
-                      (certbot-default-location-configuration
-                       (return "404"))))))
+                      (nginx-location-configuration
+                       (uri "/")
+                       (body (list "return 404;")))))))
          (xmpp-nginx-service
           (service nginx-service-type
                    (nginx-configuration

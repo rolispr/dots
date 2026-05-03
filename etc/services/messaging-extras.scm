@@ -23,9 +23,12 @@
             http-file-share-component-configuration-expire-after
             http-file-share-component-configuration-extra-config
 
+            muc->int-component
+            http-file-share->int-component
+            components->int-components
+
             serialize-muc-component
-            serialize-http-file-share-component
-            components->extra-config))
+            serialize-http-file-share-component))
 
 (define-record-type* <muc-component-configuration>
   muc-component-configuration make-muc-component-configuration
@@ -57,6 +60,72 @@
                   (default (* 7 24 3600)))
   (extra-config   http-file-share-component-configuration-extra-config
                   (default '())))
+
+(define (muc->int-component c)
+  (let* ((domain        (muc-component-configuration-domain c))
+         (name          (muc-component-configuration-name c))
+         (restrict?     (muc-component-configuration-restrict? c))
+         (mam?          (muc-component-configuration-muc-mam? c))
+         (max-history   (muc-component-configuration-max-history c))
+         (extra-modules (muc-component-configuration-extra-modules c))
+         (extra-config  (muc-component-configuration-extra-config c))
+         (modules       (if mam?
+                            (cons "muc_mam" extra-modules)
+                            extra-modules))
+         (raw-lines     (append
+                         (if (null? modules)
+                             '()
+                             (list
+                              (string-append
+                               "modules_enabled = { "
+                               (string-join
+                                (map (lambda (m)
+                                       (string-append "\"" m "\""))
+                                     modules)
+                                ", ")
+                               " }")))
+                         extra-config)))
+    (int-component-configuration
+     (hostname domain)
+     (plugin "muc")
+     (mod-muc (mod-muc-configuration
+               (name name)
+               (restrict-room-creation restrict?)
+               (max-history-messages max-history)))
+     (raw-content (string-join raw-lines "\n")))))
+
+(define (http-file-share->int-component c)
+  (let ((domain       (http-file-share-component-configuration-domain c))
+        (size-limit   (http-file-share-component-configuration-size-limit c))
+        (daily-quota  (http-file-share-component-configuration-daily-quota c))
+        (expire-after (http-file-share-component-configuration-expire-after c))
+        (extra-config (http-file-share-component-configuration-extra-config c)))
+    (int-component-configuration
+     (hostname domain)
+     (plugin "http_file_share")
+     (raw-content
+      (string-join
+       (append
+        (list
+         (string-append "http_file_share_size_limit = "
+                        (number->string size-limit))
+         (string-append "http_file_share_daily_quota = "
+                        (number->string daily-quota))
+         (string-append "http_file_share_expires_after = "
+                        (number->string expire-after)))
+        extra-config)
+       "\n")))))
+
+(define (components->int-components components)
+  (map (lambda (c)
+         (cond
+          ((muc-component-configuration? c)
+           (muc->int-component c))
+          ((http-file-share-component-configuration? c)
+           (http-file-share->int-component c))
+          (else
+           (error "Unknown component type" c))))
+       components))
 
 (define (serialize-muc-component config)
   (let ((domain        (muc-component-configuration-domain config))
@@ -104,15 +173,3 @@
     (http-file-share-component-configuration-extra-config config)
     "\n")
    "\n"))
-
-(define (components->extra-config components)
-  (append-map
-   (lambda (c)
-     (cond
-      ((muc-component-configuration? c)
-       (string-split (serialize-muc-component c) #\newline))
-      ((http-file-share-component-configuration? c)
-       (string-split (serialize-http-file-share-component c) #\newline))
-      (else
-       (error "Unknown component type" c))))
-   components))
