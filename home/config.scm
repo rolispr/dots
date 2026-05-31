@@ -6,10 +6,9 @@
 ;;;   guix home -L ~/dots -L ~/dots/per-host/$(hostname) \
 ;;;        reconfigure ~/dots/home/config.scm
 
-(define-module (home config)
-  #:use-module (gnu home)
-  #:use-module (etc prelude)
-  #:use-module (home defaults))
+(use-modules (gnu home)
+             (etc prelude)
+             (home defaults))
 
 (home-environment
  (packages (append (home-setting 'extra-packages)

@@ -42,6 +42,7 @@
 ;; layer uniform with everything else.
 ;; default-niri-bindings, default-niri-startups — imported above.
 
+
 ;; Always-present home packages for bfh.
 (define default-packages
   (append (list claude-code qwen-code)

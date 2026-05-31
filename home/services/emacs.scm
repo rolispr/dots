@@ -70,6 +70,8 @@
         emacs-keycast
         emacs-gptel
         emacs-mcp
+        emacs-git-gutter
+        emacs-git-gutter-fringe
         emacs-arei
         ;; Programming Language Support
         emacs-rustic
