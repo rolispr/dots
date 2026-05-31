@@ -10,6 +10,8 @@
 ;; Auto-save settings need to be set before auto-save-list loads
 (let ((cache-dir (expand-file-name "emacs/" (xdg-cache-home))))
   (make-directory cache-dir t)
+  (make-directory (expand-file-name "auto-saves/" cache-dir) t)
+  (make-directory (expand-file-name "auto-save-list/" cache-dir) t)
   (setq auto-save-list-file-prefix (expand-file-name "auto-save-list/.saves-" cache-dir)
         auto-save-file-name-transforms `((".*" ,(expand-file-name "auto-saves/" cache-dir) t))))
 
@@ -45,8 +47,8 @@
 
 (push '(menu-bar-lines . 0) default-frame-alist)
 (push '(tool-bar-lines . 0) default-frame-alist)
-;;(push '(tool-bar-lines . 0) default-frame-alist)
-(push '(vertical-scroll-bars . 0) default-frame-alist)
+(push '(vertical-scroll-bars . nil) default-frame-alist)
+(push '(horizontal-scroll-bars . nil) default-frame-alist)
 
 ;; Custom file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))

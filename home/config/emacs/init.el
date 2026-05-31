@@ -5,7 +5,9 @@
 ;; (require 'cl-lib)
 ;; (require 'dash)
 ;;; init ---- uxmax: emacs the ultimate
-;;; Core settings ---- 
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+
+;;; Core settings ----
 ;;;; perf tweaks
 (setq gc-cons-threshold (* 80 1024 1024)
       gc-cons-percentage 0.2
@@ -68,12 +70,12 @@
           ".ln" ".lo" ".lof" ".lot" ".mem" ".mo" ".o" ".pg" ".pgs" ".pyc" ".pyo" ".so"
           ".tfm" ".toc" ".tp" ".tps" ".v.d" ".vio" ".vo" ".vok" ".vos" ".vr" ".vrs" "~"))
 (setopt ;;backup-directory-alist '(("." . "~/.emacs.d/backups"))
-        delete-old-versions t
-        directory-free-space-args "-kh"
-        large-file-warning-threshold nil
-        save-abbrevs 'silently
-        trash-directory "~/.Trash"
-        version-control t)
+ delete-old-versions t
+ directory-free-space-args "-kh"
+ large-file-warning-threshold nil
+ save-abbrevs 'silently
+ trash-directory "~/.Trash"
+ version-control t)
 ;;;; Basic Editing ---- simple.el
 (setopt backward-delete-char-untabify-method 'untabify
         indent-tabs-mode nil
@@ -115,11 +117,11 @@
 ;;;; Help and History ---- history.el
 (setopt help-window-select t
         help-window-keep-selected t
-;;        savehist-file "~/.emacs.d/cache/savehist"
+        ;;        savehist-file "~/.emacs.d/cache/savehist"
         history-length 50000
         history-delete-duplicates t
         savehist-save-minibuffer-history t
-;;        save-place-file "~/.emacs.d/cache/saveplace"
+        ;;        save-place-file "~/.emacs.d/cache/saveplace"
         save-place-forget-unreadable-files t)
 ;;;; Dired Configuration ---- dired.el
 (setopt wgrep-auto-save-buffer t
@@ -217,11 +219,8 @@
 ;;;; Emulate vim/helix & w/e we car about keybinds & modal editing
 (use-package evil
   :demand t
-  :ensure t
   :bind (("<escape>" . keyboard-escape-quit))
   :init
-  ;; allows for using cgn
-  ;; (setq evil-search-module 'evil-search)
   (setq evil-want-keybinding nil)
   :custom
   (evil-move-cursor-back nil)
@@ -237,8 +236,8 @@
         evil-ex-substitute-case 'sensitive
         evil-undo-system 'undo-redo
         evil-ex-complete-emacs-commands t
-        evil-ex-visual-char-range t ; Evil has characterwise ranges
-        evil-want-Y-yank-to-eol t ; Make Y consistent with other capitals
+        evil-ex-visual-char-range t
+        evil-want-Y-yank-to-eol t
         evil-symbol-word-search t
         evil-split-window-below t evil-vsplit-window-right t
         evil-mode-line-format nil
@@ -256,20 +255,31 @@
     "s" 'help-view-source)
   (evil-define-key* 'normal 'global
     "\C-^" 'evil-switch-to-windows-last-buffer
-    ;; "\C-a" 'inc-at-point "\C-x" 'dec-at-point
     "U" 'vundo
-    "gc" 'evil-comment
     [f9] 'compile-or-recompile
     (kbd "<leader>u") 'universal-argument
     (kbd "<leader>h") 'help-command
     (kbd "<leader>w") 'evil-window-map
-    (kbd "<leader>b") 'switch-to-buffer
-    (kbd "<leader>f") 'find-file (kbd "<leader>F") 'dired-jump
+    ;; Buffer and file commands with consult
+    (kbd "<leader>b") 'consult-buffer
+    (kbd "<leader>B") 'consult-project-buffer
+    (kbd "<leader>f") 'find-file
+    (kbd "<leader>F") 'dired-jump
+    ;; Search commands
+    (kbd "<leader>s") 'consult-line
+    (kbd "<leader>r") 'consult-ripgrep
+    (kbd "<leader>i") 'consult-imenu
+    (kbd "<leader>o") 'consult-outline
     (kbd "<leader>e") 'pp-eval-last-sexp (kbd "<leader>E") 'eval-defun
-    (kbd "<leader>g") 'magit
+    (kbd "<leader>v") 'magit
+    (kbd "<leader>d") 'dirvish-side
+    (kbd "<leader>p") 'consult-fd
+    (kbd "<leader>P") 'my/consult-project-switch
+    (kbd "<leader>T") 'tabspaces-project-switch-project-open-file
     (kbd "<leader>tt") 'tree-sitter-hl-mode
-    (kbd "<leader>tr") 'rainbow-delimiters-mode)
-  ;;    (kbd "<leader>tn") 'display-line-numbers)
+    (kbd "<leader>tl") 'display-line-numbers-mode
+    (kbd "<leader>tr") 'rainbow-delimiters-mode
+    (kbd "<leader>tb") 'toggle-breadcrumb-header)
   (evil-define-key 'normal dired-mode-map
     (kbd "SPC") nil)
   (evil-define-key 'normal dired-mode-map
@@ -299,7 +309,7 @@
 
 ;;; Completions
 (use-package vertico
-  :ensure t
+  :ensure nil
   :config
   (setq vertico-scroll-margin 0)
   (setq vertico-count 10)
@@ -311,9 +321,99 @@
   (define-key vertico-map (kbd "M-TAB") #'minibuffer-complete)
   (vertico-mode))
 
+(use-package vertico-directory
+  :after vertico :ensure nil
+  :bind (:map vertico-map
+              ("RET" . vertico-directory-enter)
+              ("DEL" . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+(use-package vertico-quick
+  :after vertico :ensure nil
+  :bind (:map vertico-map
+              ("C-i" . vertico-quick-insert)
+              ("C-o" . vertico-quick-exit)))
+
+(use-package vertico-repeat
+  :after vertico :ensure nil
+  :bind ("C-c r" . vertico-repeat)
+  :hook (minibuffer-setup . vertico-repeat-save))
+
+(use-package vertico-indexed :after vertico :ensure nil)
+
+(use-package vertico-mouse
+  :after vertico :ensure nil
+  :defer 1
+  :config (vertico-mouse-mode))
+
+(use-package vertico-posframe
+  :after (vertico posframe)
+  :config
+  (setq vertico-posframe-parameters
+        '((undecorated . nil)
+          (undecorated-rounded . t)
+          (left-fringe . 8)
+          (right-fringe . 8)))
+  (defun my/posframe-poshandler-frame-bottom-right-corner (info)
+    (cons (- (plist-get info :parent-frame-width)
+             (plist-get info :posframe-width))
+          (- (plist-get info :parent-frame-height)
+             (plist-get info :posframe-height)
+             (plist-get info :mode-line-height)
+             (plist-get info :minibuffer-height))))
+  (setq vertico-posframe-poshandler 'my/posframe-poshandler-frame-bottom-right-corner))
+
+(use-package vertico-multiform
+  :after vertico-posframe :ensure nil
+  :config
+  (context-menu-mode t)
+  (setq vertico-multiform-commands
+        '((execute-extended-command posframe
+                                    (vertico-posframe-poshandler . posframe-poshandler-frame-top-center))
+          (consult-line buffer
+                        (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                          (side . right)
+                                                          (window-width . 0.5))))
+          (consult-imenu buffer indexed
+                         (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                           (side . left)
+                                                           (window-width . 0.3))))
+          (consult-outline buffer
+                           (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                             (side . right)
+                                                             (window-width . 0.5))))
+          (consult-project-buffer buffer
+                                  (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                                    (side . right)
+                                                                    (window-width . 0.5))))
+          (consult-buffer buffer
+                          (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                            (side . right)
+                                                            (window-width . 0.5))))
+          (consult-ripgrep buffer
+                           (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                             (side . bottom)
+                                                             (window-height . 0.5))))
+          (consult-grep buffer
+                        (vertico-buffer-display-action . (display-buffer-in-side-window
+                                                          (side . left)
+                                                          (window-width . 0.4))))
+          (t posframe
+             (vertico-posframe-poshandler . posframe-poshandler-frame-top-center))))
+  (setq vertico-multiform-categories
+        '((file (vertico-sort-function . vertico-sort-directories-first))
+          (buffer (vertico-sort-function . vertico-sort-alpha))
+          (consult-grep buffer)))
+  (defun vertico-multiform-posframe ()
+    (interactive)
+    (vertico-multiform--display-toggle 'vertico-posframe-mode))
+  (define-key vertico-multiform-map (kbd "M-P") #'vertico-multiform-posframe)
+  (vertico-multiform-mode))
+
 ;;;; orderless
 (use-package orderless
-  :ensure t
+  :ensure nil
   :config
   ;;(setq completions-detailed t)
   (setq completion-styles '(orderless basic)
@@ -334,7 +434,7 @@
 
 ;;;; consult
 (use-package consult
-  :ensure t
+  :ensure nil
   :after vertico
   :bind (;; C-c bindings (mode-specific-map)
          ("C-c h" . consult-history)
@@ -413,6 +513,19 @@
   ;; Both < and C-+ work reasonably well.
   (setq consult-narrow-key "<") ;; (kbd "C-+")
 
+  (defun my/consult-project-switch ()
+    "Pick a known project and open it with `consult-fd' rooted there."
+    (interactive)
+    (let* ((projects (project-known-project-roots))
+           (project-dir (consult--read projects
+                                       :prompt "Switch to project: "
+                                       :category 'file
+                                       :history 'file-name-history
+                                       :sort nil)))
+      (when project-dir
+        (let ((default-directory project-dir))
+          (consult-fd)))))
+
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
@@ -431,9 +544,27 @@
   ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
   )
 
+;;;; embark
+(use-package embark
+  :ensure t
+  :bind (("C-." . embark-act)
+         ("C-;" . embark-dwim)
+         ("C-h B" . embark-bindings))
+  :init
+  (setq prefix-help-command #'embark-prefix-help-command)
+  :config
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+(use-package embark-consult
+  :ensure t
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
+
 ;;;; cape
 (use-package cape
-  :ensure t
+  :ensure nil
   :config
   (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
   (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)
@@ -441,7 +572,7 @@
 
 ;;;; marginalia
 (use-package marginalia
-  :ensure t
+  :ensure nil
   :after vertico
   :config
   (setq marginalia-align 'right)
@@ -449,7 +580,7 @@
 
 ;;;; corfu
 (use-package corfu
-  :ensure t
+  :ensure nil
   :after kind-icon
   :config
   (customize-set-variable 'kind-icon-default-face 'corfu-default)
@@ -480,30 +611,53 @@
 ;;;; magit
 (use-package transient :ensure t)
 (use-package magit
-	     :ensure t
+  :ensure nil
   :after transient
   :bind ("C-x g" . magit-status)
   :config
   (put 'magit-clean 'disabled nil))
 
-(use-package git-gutter
-	     :ensure t
-  :hook ((prog-mode     . git-gutter-mode)
-         (org-mode      . git-gutter-mode)
-         (markdown-mode . git-gutter-mode)
-         (latex-mode    . git-gutter-mode))
+;;;; consult-gh ---- github browsing through consult
+(use-package consult-gh
+  :ensure t :defer t :after consult
+  :custom
+  (consult-gh-default-clone-directory "~/projects")
+  (consult-gh-show-preview t)
+  (consult-gh-preview-key "C-o")
+  (consult-gh-repo-action #'consult-gh--repo-browse-files-action)
+  (consult-gh-large-file-warning-threshold 2500000)
+  (consult-gh-confirm-name-before-fork nil)
+  (consult-gh-confirm-before-clone t)
+  (consult-gh-notifications-show-unread-only nil)
+  (consult-gh-default-interactive-command #'consult-gh-transient)
+  (consult-gh-prioritize-local-folder nil)
+  (consult-gh-group-dashboard-by :reason)
+  (consult-gh-repo-preview-major-mode nil)
+  (consult-gh-preview-major-mode 'org-mode)
   :config
-  (setq git-gutter:update-interval 0.02))
+  (add-to-list 'savehist-additional-variables 'consult-gh--known-orgs-list)
+  (add-to-list 'savehist-additional-variables 'consult-gh--known-repos-list)
+  (consult-gh-enable-default-keybindings))
 
-(use-package git-gutter-fringe
-	     :ensure t
+(use-package consult-gh-embark
+  :ensure t :defer t :after (consult-gh embark)
+  :config (consult-gh-embark-mode +1))
+
+(use-package diff-hl
+  :ensure t
+  :defer 1
+  :hook (((prog-mode org-mode markdown-mode latex-mode) . diff-hl-mode)
+         (dired-mode . diff-hl-dired-mode))
   :config
-  (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
-  (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
-  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+  (unless (display-graphic-p) (diff-hl-margin-mode))
+  (add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+  (setq diff-hl-draw-borders nil)
+  (diff-hl-flydiff-mode 1)
+  (global-diff-hl-mode 1))
 ;;; Docs
 (use-package devdocs
-	     :ensure t
+  :ensure t
   :disabled
   :hook
   (devdocs #'(lambda () (kill-local-variable 'truncate-lines))))
@@ -578,8 +732,8 @@
           (dolist (part parts)
             (let* ((trimmed-part (string-trim part))
                    (part-color (if (string-match-p "/\\|\\." trimmed-part) 
-                                 accent-color 
-                               text-color)))
+                                   accent-color 
+                                 text-color)))
               (svg-text svg trimmed-part
                         :font-family "Fira Code"
                         :font-size my/font-height-1
@@ -635,283 +789,36 @@
     (force-mode-line-update t))
 
   (add-hook 'window-size-change-functions #'my/update-header-on-resize)
+
+  (defun toggle-breadcrumb-header ()
+    "Toggle the custom breadcrumb header line in the current buffer."
+    (interactive)
+    (if header-line-format
+        (setq-local header-line-format nil)
+      (setq-local header-line-format '(:eval (my/header-line))))
+    (force-mode-line-update t))
   )
 
-;;;; modeline ---- global statusbar
-(use-package doom-modeline)
-(use-package mini-echo
-  :ensure (:host github :repo "liuyinz/mini-echo.el")
-  :after (evil nerd-icons kind-icon)
-  :custom-face
-  (mini-echo-minibuffer-window ((t (:inherit default
-                                             :height 130
-                                             :foreground "#E0E0E0"
-                                             :background "#404040"
-                                             :box (:line-width (12 . 1) :color "#404040" :style flat-button)))))
-  :custom
-  (mini-echo-buffer-status-style 'both)
-  (mini-echo-window-divider-args '(t 1 1))
-  (mini-echo-update-interval 0.3)
-  (mini-echo-right-padding 2)
-  (mini-echo-separator " ")
-  ;; Main layout inspired by doom-modeline's default
-  (mini-echo-persistent-rule
-   '(:long ("evil" "input-method" "major-mode" "buffer-name" 
-            "vcs" "flymake" "lsp-mode" "buffer-position" 
-            "buffer-size" "process")
-           :short ("major-mode" "buffer-name" "flymake")))
-  ;; Temporary info that appears when needed
-  (mini-echo-temporary-rule
-   '(:both ("selection-info" "narrow" "macro" "profiler" 
-            "repeat" "text-scale")))
-  :config
-  ;; Define enhanced version of buffer-name segment
-  (mini-echo-define-segment "buffer-name"
-    "Enhanced buffer name with icons and state."
-    :fetch
-    (let* ((icon (when (and (display-graphic-p)
-                            (stringp buffer-file-name))
-                   (nerd-icons-icon-for-file (file-name-nondirectory buffer-file-name))))
-           (name (buffer-name))
-           (state (mini-echo-buffer-status))
-           (read-only (when buffer-read-only 
-                        (propertize " RO" 'face 'mini-echo-yellow-bold))))
-      (concat
-       (when icon (concat icon " "))
-       (if (and (buffer-file-name) 
-                (buffer-modified-p))
-           (propertize name 'face 'mini-echo-green-bold)
-         name)
-       read-only
-       (when state 
-         (propertize (car state) 'face (cdr state))))))
+;;;; modeline
+(use-package doom-modeline
+  :ensure nil
+  :init (doom-modeline-mode 1))
 
-  ;; Enhanced LSP segment
-  (mini-echo-define-segment "lsp-mode"
-    "Show LSP status with icon."
-    :fetch
-    (when (and (bound-and-true-p lsp-mode)
-               (lsp-workspaces))
-      (concat
-       (nerd-icons-mdicon "nf-md-rocket_launch" 
-                          :face 'mini-echo-green)
-       " LSP")))
-  ;; Enhanced VCS segment
-  (mini-echo-define-segment "vcs"
-    "Show VCS info with icon."
-    :fetch
-    (when (and (bound-and-true-p vc-mode)
-               buffer-file-name)
-      (let* ((backend (vc-backend buffer-file-name))
-             (state (vc-state buffer-file-name backend)))
-        (concat
-         (nerd-icons-octicon "nf-oct-git_branch"
-                             :face 'mini-echo-blue)
-         " "
-         (substring-no-properties vc-mode
-                                  (+ (if (eq backend 'Hg) 2 3) 2))))))
-  ;; Enhanced flymake segment
-  (mini-echo-define-segment "flymake"
-    "Show flymake diagnostics with icons."
-    :fetch
-    (save-restriction 
-      (widen)
-      (let* ((diags (flymake-diagnostics (point-min) (point-max)))
-             (error-count (cl-count-if
-                           (lambda (d) 
-                             (eq (flymake-diagnostic-type d) :error))
-                           diags))
-             (warning-count (cl-count-if
-                             (lambda (d)
-                               (eq (flymake-diagnostic-type d) :warning))
-                             diags))
-             (note-count (cl-count-if
-                          (lambda (d)
-                            (eq (flymake-diagnostic-type d) :note))
-                          diags)))
-        (concat 
-         (when (> error-count 0)
-           (concat
-            (nerd-icons-mdicon "nf-md-close_circle" :face 'error)
-            (number-to-string error-count) " "))
-         (when (> warning-count 0)
-           (concat
-            (nerd-icons-mdicon "nf-md-alert" :face 'warning)
-            (number-to-string warning-count) " "))
-         (when (> note-count 0)
-           (concat
-            (nerd-icons-mdicon "nf-md-information" :face 'success)
-            (number-to-string note-count)))))))
-  ;; Context-aware configuration
-  (defun my-mini-echo-context-detect ()
-    "Return appropriate segments based on context."
-    (with-current-buffer (current-buffer)
-      (cond
-       ((derived-mode-p 'prog-mode)
-        '(:both ("evil" "major-mode" "buffer-name" 
-                 "vcs" "lsp-mode" "flymake")))
-       ((derived-mode-p 'dired-mode)
-        '(:both ("major-mode" "buffer-name")))
-       (t nil))))
-  (setq mini-echo-persistent-function #'my-mini-echo-context-detect)
-  (setq mini-echo-right-padding 20)
-  ;; Initialize
-  (mini-echo-mode 1))
-
-(custom-set-faces
- '(mini-echo-green ((t (:foreground "#98be65"))))
- '(mini-echo-yellow ((t (:foreground "#ECBE7B"))))
- '(mini-echo-blue ((t (:foreground "#51afef"))))
- '(mini-echo-magenta ((t (:foreground "#c678dd"))))
- '(mini-echo-cyan ((t (:foreground "#46D9FF"))))
- '(mini-echo-red ((t (:foreground "#ff6c6b")))))
+(use-package hide-mode-line
+  :ensure nil
+  :hook ((dirvish-side-mode . hide-mode-line-mode)
+         (completion-list-mode . hide-mode-line-mode)))
 
 ;;;; stillness
 (use-package stillness-mode
- :ensure (:host github :repo "neeasade/stillness-mode.el"))
-  
-;;;; dashboard/command center
-;;;; enlight ---- versatile buffer driven menu -> commands
-;; Install and configure grid
-(use-package grid
-  :ensure (:host github :repo "ichernyshovvv/grid.el"))
+  :ensure (:host github :repo "neeasade/stillness-mode.el"))
 
-(use-package enlight
-  :demand t
-  :after (grid)
-  :init
-  (defun my-get-username ()
-    "Get the current user's full name or username."
-    (or (user-login-name)
-        (user-full-name)
-        "user"))
-
-  (defun my-system-info ()
-    "Get system information."
-    (format "Loaded packages: %d in startup-time | Emacs Version %s"
-            (length (elpaca--queued))
-            emacs-version))
-
-  (defun my-toggle-status ()
-    "Return status of important modes."
-    (let ((mode-status
-           (list
-            (cons "Tabbed workspace" (bound-and-true-p tab-bar-mode))
-            (cons "Buffer line" (bound-and-true-p global-tab-line-mode)))))
-      (mapconcat
-       (lambda (mode)
-         (format "%s:\n %s"
-                 (car mode)
-                 (if (cdr mode) "On" "Off")))
-       mode-status
-       " | ")))
-
-  (defun my-toggle-and-refresh (toggle-func)
-    "Toggle a mode and refresh the enlight buffer."
-    (funcall toggle-func 'toggle)
-    (let ((content (concat
-                    "\n"
-                    (propertize "Welcome to Emacs!" 'face '(:height 2.0 :weight bold :foreground "#b4befe")) "\n\n"
-                    (format "Hello, %s!\n\n" (my-get-username))
-                    (grid-get-row
-                     `((:content ,(propertize (my-system-info) 'face '(:foreground "#89b4fa"))
-                                 :width 38 :border t :padding 1)
-                       (:content "  ")
-                       (:content ,(propertize (my-toggle-status) 'face '(:foreground "#89b4fa"))
-                               :width 38 :border t :padding 1)))
-                    "\n\n"
-                    (grid-get-row
-                     `((:content ,(enlight-menu
-                                   '(("Files"
-                                      ("Project Files" project-find-file "p")
-                                      ("Recent Files" consult-recent-file "r")
-                                      ("Project Buffers" consult-project-buffer "b")
-                                      ("All Buffers" consult-buffer "a"))
-                                     ("Workspaces"
-                                      ("Switch Workspace" tabspaces-switch-workspace "w")
-                                      ("New Workspace" tabspaces-switch-or-create-workspace "n")
-                                      ("Last Workspace" tabspaces-switch-last-workspace "l")
-                                      ("Kill Workspace" tabspaces-kill-buffers-close-workspace "k"))
-                                     ("Project"
-                                      ("Git Status" magit "g")
-                                      ("Search Files" consult-ripgrep "s"))))
-                                 :width 38 :border t :padding 2)
-                       (:content "  ")
-                       (:content ,(enlight-menu
-                                 '(("UI Toggles"
-                                    ("Tab Bar" (lambda () (interactive)
-                                                 (my-toggle-and-refresh #'tab-bar-mode)) "t")
-                                    ("Tab Line" (lambda () (interactive)
-                                                  (my-toggle-and-refresh #'global-tab-line-mode)) "l"))
-                                   ("Tools"
-                                  ("Terminal" vterm "t")
-                                  ("Edit Init" (lambda () (interactive)
-                                                 (find-file user-init-file)) "e"))
-                                   ("System"
-                                  ("Restart Emacs" restart-emacs "r"))))
-                               :width 38 :border t :padding 2))))))
-      (enlight--update 'enlight-content content)
-      (when (get-buffer "*enlight*")
-        (with-current-buffer "*enlight*"
-          (let ((inhibit-read-only t))
-            (erase-buffer)
-            (insert content))))))
-  
-  :custom
-  (enlight-content
-   (concat
-    "\n"
-    (propertize "Welcome to Emacs!" 'face '(:height 2.0 :weight bold :foreground "#b4befe")) "\n\n"
-    (format "Hello, %s!\n\n" (my-get-username))
-    (grid-get-row
-     `((:content ,(propertize (my-system-info) 'face '(:foreground "#89b4fa"))
-                 :width 38 :border t :padding 1)
-       (:content "  ")
-       (:content ,(propertize (my-toggle-status) 'face '(:foreground "#89b4fa"))
-                 :width 38 :border t :padding 1)))
-    "\n\n"
-    (grid-get-row
-     `((:content ,(enlight-menu
-                   '(("Files"
-                      ("Project Files" project-find-file "p")
-                      ("Recent Files" consult-recent-file "r")
-                      ("Project Buffers" consult-project-buffer "b")
-                      ("All Buffers" consult-buffer "a"))
-                     ("Workspaces"
-                      ("Switch Workspace" tabspaces-switch-workspace "w")
-                      ("New Workspace" tabspaces-switch-or-create-workspace "n")
-                      ("Last Workspace" tabspaces-switch-last-workspace "l")
-                      ("Kill Workspace" tabspaces-kill-buffers-close-workspace "k"))
-                     ("Project"
-                      ("Git Status" magit "g")
-                      ("Search Files" consult-ripgrep "s"))))
-                 :width 38 :border t :padding 2)
-       (:content "  ")
-       (:content ,(enlight-menu
-                   '(("UI Toggles"
-                      ("Tab Bar" (lambda () (interactive)
-                                   (my-toggle-and-refresh #'tab-bar-mode)) "t")
-                      ("Tab Line" (lambda () (interactive)
-                                    (my-toggle-and-refresh #'global-tab-line-mode)) "l"))
-                     ("Tools"
-                      ("Terminal" vterm "t")
-                      ("Edit Init" (lambda () (interactive)
-                                     (find-file user-init-file)) "e"))
-                     ("System"
-                      ("Restart Emacs" restart-emacs "r"))))
-                 :width 38 :border t :padding 2)))))
-
-  :config
-  (setopt initial-buffer-choice 
-          (lambda () 
-            (enlight-open) 
-            (get-buffer "*enlight*"))))
 ;;;; display keybinds and their functions as they're typed
 (use-package which-key
- :ensure nil
+  :ensure nil
   :custom
   (which-key-idle-delay 0.0)
-  (which-key-popup-type 'posframe)
+  (which-key-popup-type 'custom)
   (which-key-max-display-columns 2)
   :config
   (setq which-key-separator " "
@@ -949,7 +856,7 @@
 
 (use-package posframe :ensure t)
 (use-package which-key-posframe
-	     :ensure t
+  :ensure t
   :after (which-key posframe)
   :custom
   ;;(which-key-posframe-border-width 1)
@@ -975,8 +882,101 @@
   :config
   (ultra-scroll-mode 1))
 
+;;;; fonts ---- fontaine presets
+(use-package fontaine
+  :ensure t :demand t
+  :config
+  (setq fontaine-presets
+        '((fira
+           :default-family "Fira Code"
+           :default-height 130
+           :italic-slant italic
+           :line-spacing 0.2)
+          (fira-large
+           :default-family "Fira Code"
+           :default-height 150
+           :italic-slant italic
+           :line-spacing 0.2)
+          (maple
+           :default-family "Maple Mono NF"
+           :default-height 130
+           :italic-slant italic
+           :line-spacing 0.2)
+          (maple-large
+           :default-family "Maple Mono NF"
+           :default-height 150
+           :italic-slant italic
+           :line-spacing 0.2)
+          (regular
+           :default-family "Maple Mono NF"
+           :default-height 130
+           :italic-slant italic
+           :line-spacing 0.2)
+          (t
+           :default-family "Maple Mono NF"
+           :default-height 130
+           :line-spacing 0.2)))
+  (defun my/font-info ()
+    "Display current font family and size."
+    (interactive)
+    (message "Font: %s at %spt"
+             (face-attribute 'default :family)
+             (/ (face-attribute 'default :height) 10.0)))
+  (fontaine-set-preset 'regular)
+  (fontaine-mode 1)
+  (set-face-attribute 'font-lock-comment-face nil :slant 'italic))
+
+;;;; pulsar ---- flash line on cursor jumps
+(use-package pulsar
+  :ensure t :defer 2
+  :custom
+  (pulsar-pulse t)
+  (pulsar-delay 0.055)
+  (pulsar-iterations 10)
+  (pulsar-face 'pulsar-magenta)
+  :hook
+  ((consult-after-jump imenu-after-jump) . pulsar-recenter-top)
+  ((consult-after-jump imenu-after-jump) . pulsar-reveal-entry)
+  :config
+  (setq pulsar-pulse-functions
+        '(recenter-top-bottom
+          move-to-window-line-top-bottom
+          reposition-window
+          bookmark-jump
+          other-window
+          delete-window
+          delete-other-windows
+          forward-page
+          backward-page
+          scroll-up-command
+          scroll-down-command
+          windmove-right
+          windmove-left
+          windmove-up
+          windmove-down
+          tab-new
+          tab-close
+          tab-next
+          org-next-visible-heading
+          org-previous-visible-heading
+          org-forward-heading-same-level
+          org-backward-heading-same-level
+          outline-backward-same-level
+          outline-forward-same-level
+          outline-next-visible-heading
+          outline-previous-visible-heading
+          outline-up-heading))
+  (pulsar-global-mode 1))
+
+;;;; jinx ---- spellchecking
+(use-package jinx
+  :ensure nil :defer t
+  :hook ((text-mode prog-mode conf-mode) . jinx-mode)
+  :bind ([remap ispell-word] . jinx-correct)
+  :config (setq jinx-languages "en_US"))
+
 (use-package catppuccin-theme
-	     :ensure nil
+  :ensure nil
   :init 
   (defun my/catppuccin-color (name)
     "Get color from catppuccin theme."
@@ -995,28 +995,47 @@
 ;;;; Tab bar and tab line 
 (use-package tab-bar
   :ensure nil
-  :after catppuccin-theme
-  :custom-face
-  (tab-bar ((t (:background ,(my/catppuccin-color 'base)))))
-  (tab-bar-tab ((t (:background ,(my/catppuccin-color 'mantle)))))
-  (tab-bar-tab-current ((t (:background ,(my/catppuccin-color 'base)))))
-  (tab-bar-tab-inactive ((t (:background ,(my/catppuccin-color 'mantle)))))
   :config
   (tab-bar-history-mode t)
-  (setq tab-bar-tab-name-format-function
-        (lambda (tab i)
-          (let* ((workspace-name (cdr (assq 'name tab)))
-                 (is-current (eq (car tab) 'current-tab))
-                 (icon "")
-                 (name (if workspace-name
-                           (format "%s %s" icon workspace-name)
-                         (format "%s ws:%d" icon i))))
-            (propertize (format " %s " name)
-                        'face (if is-current
-                                  `(:background ,(catppuccin-color 'base)
-                                                :foreground ,(catppuccin-color 'lavender))
-                                `(:background ,(catppuccin-color 'mantle)
-                                              :foreground ,(catppuccin-color 'overlay0)))))))
+
+  (setq tab-bar-menu-bar-button " ☰")
+  (setq tab-bar-format '(tab-bar-format-menu-bar tab-bar-format-tabs-groups
+                                                 tab-bar-separator
+                                                 tab-bar-format-add-tab))
+
+  (defun tab-bar-tab-name-format-hints (name _tab i)
+    (if tab-bar-tab-hints (concat (format " %d " i) "") name))
+
+  (defun tab-bar-tab-group-format-default (tab _i &optional current-p)
+    (propertize
+     (concat (funcall tab-bar-tab-group-function tab))
+     'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive)))
+
+  (defun emacs-solo/tab-group-from-project ()
+    "Call `tab-group` with the current project name as the group."
+    (interactive)
+    (when-let* ((proj (project-current))
+                (name (file-name-nondirectory
+                       (directory-file-name (project-root proj)))))
+      (tab-group (format "%s:" name))))
+
+  (defun emacs-solo/tab-switch-to-group ()
+    "Prompt for a tab group and switch to its first tab."
+    (interactive)
+    (let* ((tabs (funcall tab-bar-tabs-function))
+           (groups (delete-dups (mapcar (lambda (tab)
+                                          (funcall tab-bar-tab-group-function tab))
+                                        tabs)))
+           (group (completing-read "Switch to group: " groups nil t)))
+      (let ((i 1) (found nil))
+        (dolist (tab tabs)
+          (let ((tab-group (funcall tab-bar-tab-group-function tab)))
+            (when (and (not found)
+                       (string= tab-group group))
+              (setq found t)
+              (tab-bar-select-tab i)))
+          (setq i (1+ i))))))
+
   (setq tab-bar-show              t
         tab-bar-close-button-show nil
         tab-bar-new-button-show   nil
@@ -1024,9 +1043,16 @@
         tab-bar-back-button       nil
         tab-bar-tab-hints t
         tab-bar-select-tab-modifiers '(super)
-        tab-bar-auto-width nil
-        )
+        tab-bar-auto-width nil)
   (setq tab-bar-separator " "))
+
+;; legacy tab-bar fragments below (icon glyph) are inert.
+(when nil
+  (let* ((workspace-name nil)
+         (is-current nil)
+         ;; placeholder for legacy icon glyph
+         ;;                 (icon"")
+         (dead nil))))
 
 (defcustom tab-line-tab-min-width 10
   "Minimum width of a tab in characters."
@@ -1224,7 +1250,7 @@ function."
   (setq tabspaces-use-filtered-buffers-as-default t
         tabspaces-default-tab "main"
         tabspaces-remove-to-default t
-        tabspaces-include-buffers '("*scratch*" "*Messages*" "*enlight*")
+        tabspaces-include-buffers '("*scratch*" "*Messages*")
         ;; Sessions
         tabspaces-session t
         tabspaces-session-auto-restore t))
@@ -1259,7 +1285,8 @@ function."
   (nerd-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 (use-package vscode-icon
-    :ensure (:host github :repo "jojojames/vscode-icon-emacs"))
+  :ensure (:host github :repo "jojojames/vscode-icon-emacs" :wait t)
+  :demand t)
 ;;(use-package all-the-icons-completion :config (all-the-icons-completion-mode))
 (use-package ligature
   :config
@@ -1335,7 +1362,7 @@ function."
 ;;;; Highlight code in EWW
 (use-package shr-tag-pre-highlight
   :disabled
-;;  :after shr
+  ;;  :after shr
   :config
   (add-to-list 'shr-external-rendering-functions
                '(pre . shr-tag-pre-highlight))
@@ -1379,6 +1406,23 @@ function."
 ;;; Programming & IDEs
 ;;;; graciously handle switching between tab or space preferred files
 (use-package dtrt-indent :config (dtrt-indent-global-mode 1))
+
+;;;; apheleia ---- format-on-save
+(use-package apheleia
+  :ensure t
+  :config (apheleia-global-mode))
+
+;;;; treesit-auto ---- prompt-install grammars
+(use-package treesit-auto
+  :ensure t :defer t
+  :config
+  (setq treesit-auto-install 'prompt)
+  (global-treesit-auto-mode))
+
+;;;; colorful-mode ---- highlight color literals
+(use-package colorful-mode
+  :ensure t
+  :config (global-colorful-mode))
 
 ;;;; TODO fix treesitter
 (setq treesit-font-lock-level 4)
@@ -1456,6 +1500,31 @@ function."
 (use-package eros
   :hook
   (emacs-lisp-mode . eros-mode))
+
+;;;;; elisp insight (cursor-sensor doc)
+(use-package semel
+  :ensure (:host github :repo "eshelyaron/semel")
+  :defer t
+  :hook ((emacs-lisp-mode . semel-mode)
+         (emacs-lisp-mode . cursor-sensor-mode)))
+
+;;;;; eval flashing
+(use-package eval-sexp-fu :ensure t :defer t)
+(use-package cider-eval-sexp-fu
+  :ensure t :defer t :after (cider eval-sexp-fu)
+  :config (require 'cider-eval-sexp-fu))
+
+;;;;; Scheme / Guile / Hoot
+(use-package geiser :ensure t :defer t)
+(use-package geiser-guile :ensure t :defer t)
+;; (use-package geiser-hoot
+;;   :ensure nil
+;;   :commands (run-hoot geiser-hoot-connect connect-to-hoot)
+;;   :init
+;;   (with-eval-after-load 'geiser
+;;     (require 'geiser-hoot))
+;;   :config
+;;   (setq geiser-hoot-scheme-dir "~/git/guile/geiser-hoot-src"))
 
 ;;;; Markdown
 (setq eglot-extend-to-xref t)
@@ -1568,12 +1637,12 @@ function."
   :config
   ;; Configure SLY
   ;; (setq sly-complete-symbol-function 'sly-flex-completions)
-   (setq sly-net-coding-system 'utf-8-unix)
+  (setq sly-net-coding-system 'utf-8-unix)
 
-;; (setq sly-lisp-implementations `((sbcl ("/home/bfh/.guix-home/profile/bin/sbcl"))))
-(setq sly-lisp-implementations
-      `((sbcl-trial-guix ("/home/bfh/.guix-home/profile/bin/sbcl" "--dynamic-space-size" "2000"))
-        (sbcl-guix ("/home/bfh/.guix-home/profile/bin/sbcl"))))
+  ;; (setq sly-lisp-implementations `((sbcl ("/home/bfh/.guix-home/profile/bin/sbcl"))))
+  (setq sly-lisp-implementations
+        `((sbcl-trial-guix ("/home/bfh/.guix-home/profile/bin/sbcl" "--dynamic-space-size" "2000"))
+          (sbcl-guix ("/home/bfh/.guix-home/profile/bin/sbcl"))))
   
   ;; Enable ParEdit mode for Lisp modes
   ;; ;; (add-hook 'sly-mode-hook 'enable-paredit-mode)
@@ -1584,25 +1653,103 @@ function."
   ;; (add-hook 'sly-mrepl-mode-hook 'rainbow-delimiters-mode)
   
   ;; Company mode integration
-;;  (add-hook 'sly-mode-hook 'company-mode)
+  ;;  (add-hook 'sly-mode-hook 'company-mode)
   ;; (add-hook 'sly-mrepl-mode-hook 'company-mode)
-)
+  )
 
 ;; SLY-ASDF configuration
 (use-package sly-asdf
   :ensure nil
   :after sly)
 
+;; SLY overlay eval + leader bindings
+(use-package sly-overlay
+  :ensure t
+  :defer t :after (sly evil which-key)
+  :config
+  (which-key-add-key-based-replacements "SPC l" "sly-eval")
+  (evil-define-key 'normal sly-mode-map
+    (kbd "<leader>ll") 'sly-overlay-eval-defun
+    (kbd "<leader>lr") 'sly-overlay-eval-region
+    (kbd "<leader>lp") 'sly-overlay-eval-print-last-expression
+    (kbd "C-c C-c") 'sly-overlay-eval-defun
+    (kbd "C-c C-r") 'sly-overlay-eval-region
+    (kbd "C-c C-p") 'sly-overlay-eval-print-last-expression))
+
 ;; Additional useful packages for Lisp development
 (use-package lispy
-  :ensure t
-  :hook ((common-lisp-mode . lispy-mode)
-         (emacs-lisp-mode . lispy-mode)
-         (sly-mrepl-mode . lispy-mode)))
+  :ensure nil
+  :hook ((emacs-lisp-mode lisp-mode scheme-mode clojure-mode fennel-mode)
+         . lispy-mode))
 
 (use-package lispyville
-  :ensure t
-  :hook ((lispy-mode . lispyville-mode)))
+  :ensure nil
+  :after (evil lispy transient)
+  :hook ((emacs-lisp-mode lisp-mode scheme-mode
+          clojure-mode clojurescript-mode fennel-mode)
+         . lispyville-mode)
+  :init
+  (setq lispyville-key-theme
+        '((operators normal visual)
+          c-w
+          c-u
+          prettify
+          text-objects
+          (atom-movement normal motion visual)
+          (additional-movement normal motion visual)
+          slurp/barf-lispy
+          additional
+          additional-insert
+          additional-wrap
+          commentary))
+  :config
+  (lispyville-set-key-theme)
+
+  (evil-define-key '(normal motion visual) lispyville-mode-map
+    "J" #'lispyville-up-list
+    "K" #'lispyville-next-opening)
+
+  (transient-define-prefix bfh/lispyville-menu ()
+    "Lispyville structural editing."
+    [["Move"
+      ("H"   "prev sibling"    lispyville-backward-sexp        :transient t)
+      ("L"   "next sibling"    lispyville-forward-sexp         :transient t)
+      ("J"   "out (parent)"    lispyville-up-list              :transient t)
+      ("K"   "in (child)"      lispyville-next-opening         :transient t)
+      ("M-h" "defun top"       lispyville-beginning-of-defun   :transient t)
+      ("M-l" "defun end"       lispyville-end-of-defun         :transient t)]
+     ["Jump"
+      ("("   "parent open"     lispyville-backward-up-list     :transient t)
+      (")"   "parent close"    lispyville-up-list              :transient t)
+      ("{"   "next open"       lispyville-next-opening         :transient t)
+      ("}"   "prev close"      lispyville-previous-closing     :transient t)
+      ("["   "prev open"       lispyville-previous-opening     :transient t)
+      ("]"   "next close"      lispyville-next-closing         :transient t)]
+     ["Reshape"
+      (">"   "slurp"           lispyville-slurp                :transient t)
+      ("<"   "barf"            lispyville-barf                 :transient t)
+      ("M-j" "drag fwd"        lispyville-drag-forward         :transient t)
+      ("M-k" "drag bwd"        lispyville-drag-backward        :transient t)
+      ("M-r" "raise sexp"      lispy-raise-sexp                :transient t)
+      ("M-R" "raise list"      lispyville-raise-list           :transient t)
+      ("M-s" "splice"          lispy-splice                    :transient t)
+      ("M-S" "split"           lispy-split                     :transient t)
+      ("M-J" "join"            lispy-join                      :transient t)
+      ("M-t" "transpose"       transpose-sexps                 :transient t)
+      ("M-v" "convolute"       lispy-convolute-sexp            :transient t)]
+     ["Wrap / Insert / Comment"
+      ("M-(" "wrap ()"         lispyville-wrap-round)
+      ("M-[" "wrap []"         lispyville-wrap-brackets)
+      ("M-{" "wrap {}"         lispyville-wrap-braces)
+      ("M-i" "insert list beg" lispyville-insert-at-beginning-of-list)
+      ("M-a" "insert list end" lispyville-insert-at-end-of-list)
+      ("M-o" "open below"      lispyville-open-below-list)
+      ("M-O" "open above"      lispyville-open-above-list)
+      ("c"   "comment toggle"  lispyville-comment-or-uncomment :transient t)
+      ("y"   "comment + clone" lispyville-comment-and-clone-dwim :transient t)]])
+
+  (evil-define-key 'normal lispyville-mode-map
+    (kbd "gh") #'bfh/lispyville-menu))
 
 ;; Set up Common Lisp specific configurations
 (with-eval-after-load 'common-lisp-mode
@@ -1626,21 +1773,21 @@ function."
 (setq tool-bar-map (make-sparse-keymap))
 (tool-bar-add-item "file_type_git"
                    'magit-status
-                   'magit-status 
+                   'magit-status
                    :help "Git Status"
-                   :image (find-image 
-                          `((:type png 
-                             :file ,(expand-file-name "file_type_git.png" 
-                                    (concat vscode-icon-dir "23"))))))
+                   :image (find-image
+                           `((:type png
+                                    :file ,(expand-file-name "file_type_git.png"
+                                                             (concat vscode-icon-dir "23"))))))
 
 (tool-bar-add-item "folder_type_folder"
-                   'dirvish  
+                   'dirvish
                    'dirvish
                    :help "File Explorer"
                    :image (find-image
-                          `((:type png
-                             :file ,(expand-file-name "folder_type_common.png"
-                                    (concat vscode-icon-dir "23"))))))
+                           `((:type png
+                                    :file ,(expand-file-name "folder_type_common.png"
+                                                             (concat vscode-icon-dir "23"))))))
 
 ;;;; nix
 (use-package nix-mode
@@ -1918,6 +2065,46 @@ function."
 
 (setq vterm-max-scrollback 100000)
 
+;;; AI / LLM
+(use-package gptel
+  :ensure t :defer t
+  :config
+  (gptel-make-anthropic "Claude" :stream t :key 'gptel-api-key-from-auth-source)
+  (gptel-make-gemini "Gemini" :stream t :key 'gptel-api-key-from-auth-source)
+  (gptel-make-openai "ChatGPT" :stream t :key 'gptel-api-key-from-auth-source)
+  (setq gptel-default-mode 'org-mode
+        gptel-model 'gemini-2.0-flash
+        gptel-stream t
+        gptel-expert-commands t
+        gptel-include-reasoning nil
+        gptel-use-tools t
+        gptel-track-response t
+        gptel-track-media t
+        gptel--debug nil)
+  (require 'gptel-curl)
+  (require 'gptel-transient)
+  (require 'gptel-integrations)
+  (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
+  (add-hook 'gptel-post-response-functions 'gptel-end-of-response)
+  (require 'gptel-tools)
+  :bind (("C-c g s" . gptel-send)
+         ("C-c g g" . gptel)
+         ("C-c g m" . gptel-menu)
+         ("C-c g r" . gptel-rewrite)
+         ("C-c g a" . gptel-add)
+         ("C-c g f" . gptel-add-file)))
+
+(use-package mcp
+  :ensure (mcp :host github :repo "lizqwerscott/mcp.el" :files (:defaults "*.el"))
+  :defer t :after gptel
+  :custom
+  (mcp-hub-servers
+   '(("filesystem" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-filesystem" "~/")))
+     ("mcp-server-text-editor" . (:command "npx" :args ("-y" "mcp-server-text-editor")))
+     ("memory" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-memory")))
+     ("sequential-thinking" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-sequential-thinking")))))
+  :config (require 'mcp-hub))
+
 
 
 
@@ -2117,8 +2304,6 @@ WRAP-WIDTH defaults to 80 if not provided."
      "0a2168af143fb09b67e4ea2a7cef857e8a7dad0ba3726b500c6a579775129635"
      "1bb8300c70034e287e222a529214eff80825474d79f98203517d13f5ff98cbe8"
      "f5723a6bcce8be0d90c759a0cf82bbfa7acfdd9739ef9c3c9248cf74b180d86f" default))
- '(mini-echo-mode t)
- '(mini-echo-right-padding 4)
  '(org-export-backends '(ascii html icalendar latex md odt))
  '(package-selected-packages nil nil nil "Customized with use-package emacs")
  '(package-vc-selected-packages
@@ -2172,37 +2357,37 @@ WRAP-WIDTH defaults to 80 if not provided."
   (interactive)
   (setq-local nano-box-mode-line-format mode-line-format)
   (setq nano-box-state t
-	mode-line-format '(:eval (nano-modeline-element-window-spacing))
-	overline-margin 1
-	fringes-outside-margins t
-	left-margin-width 1
-	right-margin-width 1
-	left-fringe-width 1
-	right-fringe-width 1)
+	    mode-line-format '(:eval (nano-modeline-element-window-spacing))
+	    overline-margin 1
+	    fringes-outside-margins t
+	    left-margin-width 1
+	    right-margin-width 1
+	    left-fringe-width 1
+	    right-fringe-width 1)
   
   (mapc #'face-remap-remove-relative nano-box-cookies)
   
   (let* ((fg-color (face-foreground 'default))
-	 (bg-color (face-background 'default)))
+	     (bg-color (face-background 'default)))
     (setq nano-box-cookies
-	  (list 
-	   (face-remap-add-relative 'fringe
-				    `(:background ,fg-color))
-	   (face-remap-add-relative 'header-line
-				    `(:overline ,fg-color 
-						:box (:line-width (1 . 1)
-								  :color ,bg-color)))
-	   (face-remap-add-relative 'mode-line-active
-				    `(:overline "#89b4fa"
-						:background ,(face-foreground 'vertical-border)
-						:foreground ,(face-foreground 'vertical-border)
-						:height 1.0))
-	   (face-remap-add-relative 'mode-line-inactive
-				    `(:overline ,fg-color
-						:background ,(face-foreground 'vertical-border)
-						:foreground ,(face-foreground 'vertical-border)
-						:height 1.0))
-	   )))
+	      (list 
+	       (face-remap-add-relative 'fringe
+				                    `(:background ,fg-color))
+	       (face-remap-add-relative 'header-line
+				                    `(:overline ,fg-color 
+						                        :box (:line-width (1 . 1)
+								                                  :color ,bg-color)))
+	       (face-remap-add-relative 'mode-line-active
+				                    `(:overline "#89b4fa"
+						                        :background ,(face-foreground 'vertical-border)
+						                        :foreground ,(face-foreground 'vertical-border)
+						                        :height 1.0))
+	       (face-remap-add-relative 'mode-line-inactive
+				                    `(:overline ,fg-color
+						                        :background ,(face-foreground 'vertical-border)
+						                        :foreground ,(face-foreground 'vertical-border)
+						                        :height 1.0))
+	       )))
   
   (set-window-margins nil 2 2)
   (when (eq (window-buffer) (current-buffer))
@@ -2212,11 +2397,11 @@ WRAP-WIDTH defaults to 80 if not provided."
   "Remove box border from buffer"
   (interactive)
   (setq-local nano-box-state nil
-	      left-fringe-width 1 
-	      right-fringe-width 1
-	      left-margin-width 0
-	      right-margin-width 0
-	      mode-line-format nano-box-mode-line-format)
+	          left-fringe-width 1 
+	          right-fringe-width 1
+	          left-margin-width 0
+	          right-margin-width 0
+	          mode-line-format nano-box-mode-line-format)
   (mapc #'face-remap-remove-relative nano-box-cookies)
   (set-window-margins nil 0 0)
   (set-window-buffer nil (current-buffer)))
@@ -2237,53 +2422,53 @@ WRAP-WIDTH defaults to 80 if not provided."
 
 ;; Hook setup
 ;;(add-hook 'prog-mode-hook #'nano-box-on)
-;(my/set-tab-theme)
+                                        ;(my/set-tab-theme)
 
 ;; FIXME TODO
 (defun sly-eval-last-expression-eros ()
   (interactive)
   (destructuring-bind (output value)
-      (slime-eval `(swank:eval-and-grab-output ,(slime-last-expression)))
-    (eros--make-result-overlay (concat output value)
-      :where (point)
-      :duration eros-eval-result-duration)))
+                      (slime-eval `(swank:eval-and-grab-output ,(slime-last-expression)))
+                      (eros--make-result-overlay (concat output value)
+                        :where (point)
+                        :duration eros-eval-result-duration)))
 
-(sly-start-slynk-server)
-(sly-eval `,(sly-pprint-eval-last-expression))
+;; (sly-start-slynk-server)
+;; (sly-eval `,(sly-pprint-eval-last-expression))
 
 
 ;; 1. Create our custom tool-bar map
 (defvar my-toolbar-map
   (let ((map (make-sparse-keymap)))
     ;; Add Git status button
-    (tool-bar-local-item 
+    (tool-bar-local-item
      "file_type_git"
-     'magit-status 
+     'magit-status
      'git
      map
      :help "Git Status"
-     :image (find-image 
-             `((:type png 
-                :file ,(expand-file-name "file_type_git.png" 
-                       (concat vscode-icon-dir "23"))))))
-    
-    ;; Add Dirvish button  
+     :image (find-image
+             `((:type png
+                      :file ,(expand-file-name "file_type_git.png"
+                                               (concat vscode-icon-dir "23"))))))
+
+    ;; Add Dirvish button
     (tool-bar-local-item
      "folder_type_folder"
      'dirvish
      'folder
-     map 
+     map
      :help "File Explorer"
      :image (find-image
              `((:type png
-                :file ,(expand-file-name "folder_type_common.png"
-                       (concat vscode-icon-dir "23"))))))
+                      :file ,(expand-file-name "folder_type_common.png"
+                                               (concat vscode-icon-dir "23"))))))
     map))
 
-;; 2. Set up the global binding 
-(global-set-key [tool-bar] 
-                `(menu-item "tool bar" ignore 
-                           :filter (lambda (_) my-toolbar-map)))
+;; 2. Set up the global binding
+(global-set-key [tool-bar]
+                `(menu-item "tool bar" ignore
+                            :filter (lambda (_) my-toolbar-map)))
 
 ;; 3. Apply our toolbar map globally
 (setq-default tool-bar-map my-toolbar-map)
@@ -2319,7 +2504,7 @@ WRAP-WIDTH defaults to 80 if not provided."
   (interactive)
   (if-let* ((project (project-current))
             (files (seq-filter #'text-file-p
-                             (project-files project)))
+                               (project-files project)))
             (buf (get-buffer-create "*Project Files*")))
       (with-current-buffer buf
         (org-mode)
@@ -2367,20 +2552,20 @@ WRAP-WIDTH defaults to 80 if not provided."
 (defun list-project-files-with-contents ()
   (interactive)
   (let* ((files (seq-filter (lambda (f) (not (string-match-p "~$" f)))
-			    (project-files (project-current))))
-	 (buf (get-buffer-create "*Project Files*")))
+			                (project-files (project-current))))
+	     (buf (get-buffer-create "*Project Files*")))
     (with-current-buffer buf
       (org-mode)
       (erase-buffer)
       (dolist (file files)
-	(insert (format "* %s\n" file))
-	(when (file-readable-p file)
-	  (let ((contents (with-temp-buffer
-			    (insert-file-contents file)
-			    (buffer-string))))
-	    (insert contents)
-	    (unless (string-suffix-p "\n\n" contents)
-	      (insert "\n\n")))))
+	    (insert (format "* %s\n" file))
+	    (when (file-readable-p file)
+	      (let ((contents (with-temp-buffer
+			                (insert-file-contents file)
+			                (buffer-string))))
+	        (insert contents)
+	        (unless (string-suffix-p "\n\n" contents)
+	          (insert "\n\n")))))
       (goto-char (point-min)))
     (switch-to-buffer buf)))
 
