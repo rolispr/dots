@@ -1,0 +1,57 @@
+;;; Framework system overrides — consumed by (system-setting 'key).
+;;; Loaded automatically by (etc prelude) via (gethostname); -L ~/dots
+;;; is enough on the reconfigure command line.
+
+(define-module (per-host framework system)
+  #:use-module (gnu)
+  #:use-module (gnu services ssh)
+  #:use-module (gnu services virtualization)
+  #:use-module (etc users bfh)
+  #:use-module (etc services lgeh)
+  #:use-module (lab network)
+  #:use-module (lab services lan-forward)
+  #:export (override-hostname
+            override-users
+            override-groups
+            override-file-systems
+            override-swap-devices
+            override-extra-services))
+
+;; libvirt-service-type extends account-service-type with the libvirt
+;; group; trust that to satisfy bfh's supplementary-groups validation
+;; rather than declaring it twice (which produces a "groups appear more
+;; than once: libvirt" warning).
+
+(define override-hostname "framework")
+
+(define override-users (list %bfh))
+
+(define override-file-systems
+  (list (file-system
+          (device (file-system-label "root"))
+          (mount-point "/")
+          (type "ext4"))
+        (file-system
+          (device (uuid "DD8A-2ACD" 'fat))
+          (mount-point "/boot/efi")
+          (type "vfat"))))
+
+(define override-swap-devices
+  (list (swap-space
+         (target (uuid "008ed7c6-e6cb-4106-99b4-5eee8e5a7eec")))))
+
+(define override-extra-services
+  (append
+   (lgeh-services)
+   (lab-network-services)
+   (lan-forwarders
+    '((jellyfin-forward 8096 "10.20.0.11" 8096)))
+   (list (service libvirt-service-type
+                  (libvirt-configuration
+                   (unix-sock-group "libvirt")))
+         (service virtlog-service-type)
+         (service openssh-service-type
+                  (openssh-configuration
+                   (port-number 2226)
+                   (password-authentication? #t)
+                   (permit-root-login 'prohibit-password))))))

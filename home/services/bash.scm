@@ -25,8 +25,8 @@
            (home-bash-configuration
             (aliases '(("ll" . "ls -l")
                        ("la" . "ls -la")
-		       ("update-system" . "sudo -E guix system -L ~/dots reconfigure ~/dots/etc/systems/arraniz.scm")
-		       ("update-home" . "guix home -L ~/dots reconfigure ~/dots/home/users/bfh.scm")))
+		       ("update-system" . "sudo -E guix system -L ~/dots reconfigure ~/dots/etc/systems/config.scm")
+		       ("update-home" . "guix home -L ~/dots reconfigure ~/dots/home/config.scm")))
             (environment-variables %wayland-environment-vars)
             (bashrc
              (list (local-file (string-append config-dir "/shell/bashrc"))))

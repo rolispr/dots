@@ -3,6 +3,10 @@
 (define-module (etc systems base-system)
   #:use-module (gnu)
   #:use-module (guix)
+  #:use-module (guix gexp)
+  #:use-module (guix packages)
+  #:use-module (guix utils)
+  #:use-module (guix channels)
   #:export (base-system
 	    base-keyboard-layout
 	    base-locale
@@ -26,7 +30,7 @@
    (bootloader '())
    (file-systems '())
    (users '())
-   (services (cons* (service dhcp-client-service-type)
+   (services (cons* (service dhcp-service-type)
 		    (service openssh-service-type)
 		    %base-services)))
   )

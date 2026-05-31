@@ -1,4 +1,4 @@
-(define-module (etc systems arraniz)
+(define-module (etc systems framework)
   #:use-module (gnu)
   #:use-module (guix)
   #:use-module (guix gexp)
@@ -83,8 +83,9 @@
         brightnessctl
         wlgreet
         xorg-server-xwayland
-        xdg-desktop-portal
-        xdg-desktop-portal-wlr))
+        ;;xdg-desktop-portal
+        ; xdg-desktop-portal-wlr
+        ))
 
 (define %guixos-base-packages
   (append %stumpwm-packages
@@ -111,12 +112,12 @@
                        (mount-point "/")
                        (type "ext4"))
                       (file-system
-                       (device (uuid "D140-4BF5" 'fat))
+                       (device (uuid "DD8A-2ACD" 'fat))
                        (mount-point "/boot/efi")
                        (type "vfat")))
                 %base-file-systems))
  (swap-devices (list (swap-space
-                      (target (uuid "a0bca027-0738-4287-933b-42f5960a25ed")))))
+                      (target (uuid "008ed7c6-e6cb-4106-99b4-5eee8e5a7eec")))))
  (users (cons* (user-account
                 (name "bfh")
                 (comment "some guy")
@@ -137,8 +138,8 @@
                   (specification->package "brightnessctl")
                   (specification->package "wlgreet")
                   (specification->package "xorg-server-xwayland")
-                  (specification->package "xdg-desktop-portal-wlr")
-                  (specification->package "xdg-desktop-portal")
+                  ;; (specification->package "xdg-desktop-portal-wlr")
+                  ;; (specification->package "xdg-desktop-portal")
                   (specification->package "wireplumber")
                   (specification->package "alacritty")
                   (specification->package "git"))
@@ -163,6 +164,7 @@
                                         (authorized-keys
                                          (append (list (local-file "./nonguix-signing-key.pub"))
                                                  %default-authorized-guix-keys)))))))
+ 
  ;; Allow resolution of '.local' host names with mDNS.
  (name-service-switch %mdns-host-lookup-nss))
 
