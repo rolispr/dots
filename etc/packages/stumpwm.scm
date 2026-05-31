@@ -11,8 +11,11 @@
   #:use-module (gnu packages build-tools)
   #:use-module (gnu packages check)
   #:use-module (gnu packages lisp-check)
+  #:use-module (gnu packages lisp)
   #:use-module (gnu packages lisp-xyz)
-  #:use-module (gnu packages texinfo))
+  #:use-module (gnu packages texinfo)
+  #:use-module (gnu packages wm)
+  #:export (%stumpwm-packages))
 
 (define-public stumpwm-dev
   (package
@@ -116,3 +119,32 @@ productive, customizable lisp based systems.")
            (delete 'check)
            (delete 'remove-temporary-cache)
            (delete 'cleanup)))))))
+
+;; Bundle the StumpWM + SBCL + clx + contrib packages the hosts want.
+;; System config imports this list via (etc packages stumpwm).
+(define %stumpwm-packages
+  (list sbcl
+        stumpwm-dev+servers
+        sbcl-parse-float
+        sbcl-local-time
+        sbcl-cl-ppcre
+        sbcl-zpng
+        sbcl-salza2
+        sbcl-clx
+        sbcl-zpb-ttf
+        sbcl-cl-vectors
+        sbcl-cl-store
+        sbcl-trivial-features
+        sbcl-global-vars
+        sbcl-trivial-garbage
+        sbcl-bordeaux-threads
+        sbcl-cl-fad
+        sbcl-clx-truetype
+        sbcl-stumpwm-ttf-fonts
+        sbcl-stumpwm-kbd-layouts
+        sbcl-stumpwm-swm-gaps
+        sbcl-stumpwm-globalwindows
+        sbcl-stumpwm-cpu
+        sbcl-stumpwm-mem
+        sbcl-stumpwm-wifi
+        sbcl-stumpwm-battery-portable))
