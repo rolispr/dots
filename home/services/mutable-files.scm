@@ -11,7 +11,7 @@
 
 (define *home-path* "/home/bfh/dots/")
 
-(define (home-utable-files-gexp-service config)
+(define (home-mutable-files-gexp-service config)
   `(;; the stump experience
     (".config/stumpwm/config"
      ,(string-append *home-path* "stumpwm/config"))

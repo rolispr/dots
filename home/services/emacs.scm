@@ -15,63 +15,63 @@
 (define config-dir (string-append (getenv "HOME") "/dots/home/config"))
 
 (define (home-emacs-config-profile-service config)
-  (list emacs-next-pgtk
-	    emacs-geiser
-	    ;; UI Enhancements
+  (list emacs-pgtk
+        emacs-geiser
+        emacs-geiser-guile
+        emacs-geiser-hoot
+        ;; UI Enhancements
         emacs-ef-themes
-	    emacs-doom-themes
-	    emacs-catppuccin-theme
+        emacs-doom-themes
+        emacs-catppuccin-theme
         emacs-which-key
         emacs-which-key-posframe
         emacs-posframe
         emacs-doom-modeline
-        emacs-mini-echo
+        emacs-hide-mode-line
         emacs-kind-icon
         emacs-nerd-icons
-        ;;        emacs-nerd-icons-completion
-        ;;        emacs-vscode-icon
-        ;;        emacs-ligature
-        ;;        emacs-breadcrumb
-        ;;        emacs-ultra-scroll
+        emacs-fontaine
+        emacs-pulsar
+        emacs-colorful-mode
         ;; Completion
-        ;;        emacs-vertico 
-        ;;        emacs-orderless
-        ;;        emacs-consult
-        ;;        emacs-marginalia
-        ;;        emacs-corfu
-        ;;        emacs-cape
-	    ;; Evil & Window Management
+        emacs-vertico             ; elpaca HEAD breaks (set-local …); use Guix 2.8
+        emacs-consult             ; embark-consult needs consult >= 3.2
+        emacs-orderless
+        emacs-marginalia
+        emacs-corfu               ; elpaca HEAD has same set-local bug as vertico
+        emacs-cape
+        emacs-vertico-posframe
+        emacs-embark              ; bundles embark-consult + embark-org
+        ;; Evil & Window Management
         emacs-evil
         emacs-evil-collection
         emacs-undo-fu
         emacs-undo-fu-session
         emacs-vundo
-	    ;; Dashboard & File Management
-        ;;        emacs-grid not in guix
-        emacs-enlight
+        ;; File Management
         emacs-dirvish
-	    ;;        emacs-dired-subtree
-	    ;; Development Tools
+        ;; Development Tools
         emacs-magit
         emacs-transient
-        emacs-git-gutter
-        emacs-git-gutter-fringe
-        ;;        emacs-tree-sitter-langs
+        emacs-diff-hl
+        emacs-apheleia
+        emacs-treesit-auto
         emacs-dtrt-indent
         emacs-suggest
         emacs-eros
-	    emacs-dash
-	    emacs-guix
-	    emacs-eat
-	    emacs-geiser-guile
-	    emacs-lispy
-	    emacs-lispyville
-	    emacs-keycast
-	    emacs-gptel
-	    emacs-git-gutter
-	    emacs-git-gutter-fringe
-	    emacs-arei
-	    ;; Programming Language Support
+        emacs-eval-sexp-fu
+        emacs-cider-eval-sexp-fu
+        emacs-jinx
+        emacs-outli
+        emacs-guix
+        emacs-eat
+        emacs-lispy
+        emacs-lispyville
+        emacs-keycast
+        emacs-gptel
+        emacs-mcp
+        emacs-arei
+        ;; Programming Language Support
         emacs-rustic
         emacs-go-mode
         emacs-lua-mode
@@ -81,25 +81,18 @@
         emacs-web-mode
         emacs-nix-mode
         emacs-ansible
-        ;;        emacs-python
         emacs-flymake-collection
-        ;;	emacs-tabspaces
-	    emacs-rainbow-delimiters
-	    emacs-ligature
-	    emacs-highlight
-	    emacs-highlight-symbol
-	    emacs-highlight-sexp
-	    emacs-highlight-numbers
-	    emacs-highlight-escape-sequences
-	    emacs-sly
-	    emacs-sly-asdf
-	    emacs-ansible
-	    emacs-org
-	    emacs-emms
-	    emacs-dirvish
-        ;;	emacs-dired-subtree
-	    emacs-magit
-	    ))
+        emacs-rainbow-delimiters
+        emacs-ligature
+        emacs-highlight
+        emacs-highlight-symbol
+        emacs-highlight-sexp
+        emacs-highlight-numbers
+        emacs-highlight-escape-sequences
+        emacs-sly
+        emacs-sly-asdf
+        emacs-org
+        emacs-emms))
 ;;	emacs-super-save))
 
 (define (home-emacs-config-files-service config)
