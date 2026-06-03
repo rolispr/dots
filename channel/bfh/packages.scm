@@ -11,7 +11,7 @@
 ;;; on framework/arraniz already finds these packages directly. The
 ;;; channel exists to give Cuirass a single anchor for substitute builds.
 
-(define-module (channel bfh packages)
+(define-module (bfh packages)
   #:use-module (etc packages stumpwm)
   #:use-module (etc packages guile-hoot)
   #:use-module (etc packages guile-websocket)

@@ -1,8 +1,0 @@
-(channel
- (version 0)
- (url "https://git.lab.local/bfh/dots.git")
- (directory "channel")
- (description
-  "bfh's private channel — pinned hoot, claude-code, qwen-code,
-llama-cpp-latest, stumpwm-dev+servers, and the guile-websocket-fixed
-override that hoot needs."))

@@ -2,10 +2,10 @@
 ;;; by (bfh packages). Cuirass calls (cuirass-jobs store arguments)
 ;;; once per evaluation of the bfh jobset.
 
-(define-module (channel build-aux cuirass-jobs)
+(define-module (build-aux cuirass-jobs)
   #:use-module (guix)
   #:use-module (guix packages)
-  #:use-module (channel bfh packages)
+  #:use-module (bfh packages)
   #:use-module (etc packages stumpwm)
   #:use-module (etc packages guile-hoot)
   #:use-module (etc packages guile-websocket)
