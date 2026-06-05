@@ -644,7 +644,7 @@
   :config (consult-gh-embark-mode +1))
 
 (use-package diff-hl
-  :ensure t
+  :ensure nil
   :defer 1
   :hook (((prog-mode org-mode markdown-mode latex-mode) . diff-hl-mode)
          (dired-mode . diff-hl-dired-mode))
