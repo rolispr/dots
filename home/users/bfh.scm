@@ -18,7 +18,6 @@
   #:use-module (home services bash)
   #:use-module (home services emacs)
   #:use-module (etc packages claude-code)
-  #:use-module (etc packages llama-cpp)
   #:use-module (etc packages qwen-code)
 ;;  #:use-module (home services home-impure-symlinks)
 ;;  #:use-module (home services mutable-files)
@@ -29,7 +28,7 @@
 (home-environment
  (packages
   (append
-   (list claude-code llama-cpp-latest qwen-code)
+   (list claude-code (specification->package "llama-cpp") qwen-code)
    (specifications->packages
    (list "guile"
          "guile-colorized"

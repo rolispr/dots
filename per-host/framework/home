@@ -3,13 +3,12 @@
 
 (define-module (per-host framework home)
   #:use-module (gnu packages)
-  #:use-module (etc packages llama-cpp)
   #:use-module (etc packages opentofu)
   #:use-module (etc packages litestream)
   #:export (override-extra-packages))
 
 (define override-extra-packages
-  (list llama-cpp-latest
+  (list (specification->package "llama-cpp")
         opentofu
         litestream
         (specification->package "virt-manager")

@@ -17,7 +17,6 @@
   #:use-module (etc packages guile-websocket)
   #:use-module (etc packages claude-code)
   #:use-module (etc packages qwen-code)
-  #:use-module (etc packages llama-cpp)
   #:use-module (etc packages opentofu)
   #:use-module (etc packages litestream)
   #:use-module (etc packages brogue-ce)
@@ -28,7 +27,6 @@
                guile-websocket-fixed
                claude-code
                qwen-code
-               llama-cpp-latest
                opentofu
                litestream
                brogue-ce))

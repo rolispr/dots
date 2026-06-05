@@ -11,7 +11,6 @@
   #:use-module (etc packages guile-websocket)
   #:use-module (etc packages claude-code)
   #:use-module (etc packages qwen-code)
-  #:use-module (etc packages llama-cpp)
   #:export (cuirass-jobs))
 
 (define %bfh-package-list
@@ -20,8 +19,7 @@
         guile-hoot-latest
         guile-websocket-fixed
         claude-code
-        qwen-code
-        llama-cpp-latest))
+        qwen-code))
 
 (define (package->cuirass-job store pkg)
   `((#:job-name   . ,(string-append (package-name pkg)
