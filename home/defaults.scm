@@ -18,6 +18,7 @@
   #:use-module (home theme base)
   #:use-module (home theme ef-dream)
   #:use-module (etc packages claude-code)
+  #:use-module (etc packages claude-agent-acp)
   #:use-module (etc packages qwen-code)
   #:export (default-extra-packages default-packages default-services
             default-theme
@@ -45,7 +46,7 @@
 
 ;; Always-present home packages for bfh.
 (define default-packages
-  (append (list claude-code qwen-code)
+  (append (list claude-code claude-agent-acp qwen-code)
           (specifications->packages
            (list "guile" "guile-colorized" "guile-readline"
                  "coreutils" "alacritty" "nushell" "xz" "make" "ncurses"

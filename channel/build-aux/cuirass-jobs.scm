@@ -10,6 +10,7 @@
   #:use-module (etc packages guile-hoot)
   #:use-module (etc packages guile-websocket)
   #:use-module (etc packages claude-code)
+  #:use-module (etc packages claude-agent-acp)
   #:use-module (etc packages qwen-code)
   #:export (cuirass-jobs))
 
@@ -19,6 +20,7 @@
         guile-hoot-latest
         guile-websocket-fixed
         claude-code
+        claude-agent-acp
         qwen-code))
 
 (define (package->cuirass-job store pkg)
