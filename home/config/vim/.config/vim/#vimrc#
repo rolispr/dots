@@ -149,7 +149,7 @@ var mylspOpts = {
     bufferCompletionTimeout: 0,
     customCompletionKinds: false,
     completionKinds: {},
-    filterCompletionDuplicates: false,
+   filterCompletionDuplicates: false,
 }
 ### }}}
 ### Servers {{{
