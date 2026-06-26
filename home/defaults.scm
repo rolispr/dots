@@ -97,6 +97,8 @@
                  ,(local-file (string-append config-dir "/waybar/waybar")))
                 ("wofi/style.css"
                  ,(local-file (string-append config-dir "/wofi/style.css")))
+                ("vim/config"
+                 ,(local-file (string-append config-dir "/vim/.config/vim")))
                 ("waybar/style.css"
                  ,(local-file (string-append config-dir "/waybar/style.css")))
                 ("common-lisp/source-registry.conf.d/guix.conf"
