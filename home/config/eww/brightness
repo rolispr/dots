@@ -1,3 +1,25 @@
-#!/bin/sh
-# Current backlight brightness as an integer percent.
-brightnessctl -m 2>/dev/null | awk -F, '{print $4}' | tr -d '%'
+#!/usr/bin/env bb
+;; Current brightness percent. Internal panel via sysfs backlight; external
+;; monitor via ddcutil VCP 0x10. Auto-detects which applies.
+(require '[babashka.process :as p]
+         '[clojure.string :as str]
+         '[clojure.java.io :as io])
+
+(defn backlight []
+  (first (filter #(.isDirectory %)
+                 (or (.listFiles (io/file "/sys/class/backlight")) []))))
+
+(defn pct []
+  (if-let [d (backlight)]
+    (let [cur (Long/parseLong (str/trim (slurp (io/file d "brightness"))))
+          mx  (Long/parseLong (str/trim (slurp (io/file d "max_brightness"))))]
+      (int (Math/round (* 100.0 (/ cur mx)))))
+    (let [out (try (str/trim (:out (p/sh "ddcutil" "getvcp" "10" "--brief")))
+                   (catch Exception _ ""))
+          f   (str/split out #"\s+")]
+      (if (>= (count f) 5)
+        (int (Math/round (* 100.0 (/ (Double/parseDouble (nth f 3))
+                                     (Double/parseDouble (nth f 4))))))
+        50))))
+
+(println (pct))

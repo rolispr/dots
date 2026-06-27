@@ -1,0 +1,14 @@
+#!/usr/bin/env bb
+;; Set brightness percent (arg). Internal panel via brightnessctl; external
+;; monitor via ddcutil VCP 0x10.
+(require '[babashka.process :as p]
+         '[clojure.java.io :as io])
+
+(defn backlight []
+  (first (filter #(.isDirectory %)
+                 (or (.listFiles (io/file "/sys/class/backlight")) []))))
+
+(when-let [val (first *command-line-args*)]
+  (if (backlight)
+    (p/sh "brightnessctl" "set" (str val "%"))
+    (p/sh "ddcutil" "setvcp" "10" val)))

@@ -17,7 +17,7 @@
   #:use-module (home services niri)
   #:use-module (home services alacritty)
   #:use-module (home services waybar)
-  #:use-module (home services wofi)
+  #:use-module (home services fuzzel)
   #:use-module (home services eww)
   #:use-module (home desktop)
   #:use-module (etc packages claude-code)
@@ -99,7 +99,7 @@
                  ,(local-file (string-append config-dir "/wezterm/.config/wezterm/wezterm.lua")))
                 ("waybar/config"
                  ,(local-file (string-append config-dir "/waybar/waybar")))
-                ,@(wofi-capability default-theme)
+                ,@(fuzzel-capability default-theme)
                 ("vim"
                  ,(local-file (string-append config-dir "/vim/.config/vim")
                               #:recursive? #t))

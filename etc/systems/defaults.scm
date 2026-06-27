@@ -5,6 +5,7 @@
 (define-module (etc systems defaults)
   #:use-module (gnu)
   #:use-module (gnu packages)
+  #:use-module (gnu services base)
   #:use-module (nongnu packages linux)
   #:use-module (nongnu system linux-initrd)
   #:use-module (etc packages stumpwm)
@@ -45,7 +46,11 @@
 
 (define default-users '())
 
-(define default-groups '())
+;; i2c is declared here (not via a service extension) so bfh's i2c
+;; supplementary group always validates; ddcutil's udev rule below grants
+;; this group access to /dev/i2c-* for external-monitor brightness (DDC/CI).
+(define default-groups
+  (list (user-group (name "i2c") (system? #t))))
 
 (define default-extra-packages
   (append (map specification->package
@@ -55,7 +60,8 @@
                  "pipewire" "wireplumber" "pavucontrol"
                  "wofi" "wl-clipboard" "mako"
                  "network-manager" "network-manager-applet"
-                 "brightnessctl" "git"))
+                 "brightnessctl" "ddcutil" "git"))
           %stumpwm-packages))
 
-(define default-extra-services '())
+(define default-extra-services
+  (list (udev-rules-service 'ddcutil (specification->package "ddcutil"))))

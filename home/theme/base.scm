@@ -1,7 +1,7 @@
 ;;; <theme> record + accessors. A theme carries every visual token the
 ;;; desktop shares: a complete colour palette (semantic roles plus the 16
 ;;; ANSI terminal colours), fonts, and shape. Consumers (niri, alacritty,
-;;; waybar, wofi) take a theme and pull what they need; no consumer names a
+;;; waybar, fuzzel) take a theme and pull what they need; no consumer names a
 ;;; colour or font directly.
 
 (define-module (home theme base)

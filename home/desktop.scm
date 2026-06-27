@@ -29,7 +29,7 @@
   desktop?
   (compositors desktop-compositors (default '(niri sway)))
   (bars        desktop-bars        (default '(eww waybar)))
-  (pickers     desktop-pickers     (default '(wofi)))
+  (pickers     desktop-pickers     (default '(fuzzel)))
   (terminals   desktop-terminals   (default '(alacritty wezterm)))
   (editors     desktop-editors     (default '(emacs vim)))
   (theme       desktop-theme       (default ef-dream)))
@@ -67,6 +67,7 @@
 (define (desktop-launch-picker d)
   "Return the shell command that opens D's application picker."
   (match (desktop-picker d)
+    ('fuzzel "fuzzel")
     ('wofi "wofi --show=drun")
     ('rofi "rofi -show drun")
     (other (symbol->string other))))
@@ -117,7 +118,7 @@ session infrastructure installed at the system level, so they are not here."
   (desktop
    (compositors '(niri sway))
    (bars        '(eww waybar))
-   (pickers     '(wofi))
+   (pickers     '(fuzzel))
    (terminals   '(alacritty wezterm))
    (editors     '(emacs vim))
    (theme       ef-dream)))

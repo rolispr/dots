@@ -1,28 +1,41 @@
 (defwindow bar
   :monitor 0
-  :geometry (geometry :x "0" :y "0" :width "46px" :height "100%" :anchor "left center")
+  :geometry (geometry :x "0" :y "0" :width "54px" :height "100%" :anchor "left center")
   :stacking "fg"
   :exclusive true
+  :focusable "none"
   (bar))
 
-(deflisten workspaces :initial "[]"
-  "bb ~/.config/eww/niri-workspaces.bb")
-(defpoll hour   :interval "10s" "date +%H")
-(defpoll minute :interval "10s" "date +%M")
-(defpoll vol    :interval "2s"  "sh ~/.config/eww/volume")
-(defpoll bri    :interval "5s"  "sh ~/.config/eww/brightness")
-(defpoll bat    :interval "30s" "sh ~/.config/eww/battery")
+(defwindow calendar
+  :monitor 0
+  :geometry (geometry :x "52px" :y "12px" :anchor "bottom left" :width "260px" :height "240px")
+  :stacking "fg"
+  (cal))
+
+(deflisten workspaces :initial "[]" "bb ~/.config/eww/niri-workspaces.bb")
+(deflisten sys :initial "{}" "bb ~/.config/eww/sys.bb")
+(defpoll hour      :interval "10s" "date +%H")
+(defpoll minute    :interval "10s" "date +%M")
+(defpoll bri       :interval "60s" "bb ~/.config/eww/brightness")
+(defpoll cal-day   :interval "1h"  "date +%d")
+(defpoll cal-month :interval "1h"  "date +%m")
+(defpoll cal-year  :interval "1h"  "date +%Y")
+(defvar vol-rev false)
+(defvar bri-rev false)
+(defvar pow-rev false)
 
 (defwidget bar []
-  (box :class "bar" :orientation "v" :space-evenly false
+  (centerbox :class "bar" :orientation "v" :hexpand true
     (top)
-    (mid)
+    (middle)
     (bottom)))
 
+;; Top: overview viewer, window switcher, then the workspaces.
 (defwidget top []
-  (box :orientation "v" :valign "start" :space-evenly false :spacing 10
-    (button :class "launcher"
-            :onclick "niri msg action toggle-overview" "▦")
+  (box :orientation "v" :valign "start" :hexpand true :space-evenly false :spacing 8
+    (button :class "viewer" :onclick "niri msg action toggle-overview" "")
+    (button :class "picker" :onclick "setsid -f bb ~/.config/eww/niri-window-switch.bb"
+            "")
     (workspaces-w)))
 
 (defwidget workspaces-w []
@@ -33,24 +46,62 @@
               :onclick "niri msg action focus-workspace ${ws.idx}"
         "${ws.idx}"))))
 
-(defwidget mid []
-  (box :class "clock" :orientation "v" :valign "center" :space-evenly false
-    (label :class "hour" :text hour)
-    (label :class "min"  :text minute)))
+;; Middle: general app launcher on top, then specific common apps.
+(defwidget middle []
+  (box :class "apps" :orientation "v" :valign "center" :hexpand true :space-evenly false :spacing 8
+    (button :class "launch" :onclick "setsid -f fuzzel"        "")
+    (button :class "app"    :onclick "setsid -f alacritty"               "")
+    (button :class "app"    :onclick "setsid -f google-chrome"           "")
+    (button :class "app"    :onclick "setsid -f nautilus"               "")
+    (button :class "app"    :onclick "setsid -f emacsclient -c -a emacs" "")))
 
+;; Bottom: audio, network, power, clock.
 (defwidget bottom []
-  (box :orientation "v" :valign "end" :space-evenly false :spacing 12
-    (control)
-    (button :class "lock" :onclick "swaylock" "🔒")))
+  (box :orientation "v" :valign "end" :hexpand true :space-evenly false :spacing 10
+    (volume)
+    (brightness)
+    (button :class "net" :onclick "setsid -f nm-connection-editor"
+            :tooltip {sys.net ?: ""} "")
+    (powermenu)
+    (clock)))
 
-(defwidget control []
-  (box :class "control" :orientation "v" :space-evenly false :spacing 8
-    (metric :icon "🔊" :value vol)
-    (metric :icon "☀"  :value bri)
-    (metric :icon "🔋" :value bat :show {bat != ""})))
+(defwidget volume []
+  (eventbox :halign "center" :onclick "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" :onhover "eww update vol-rev=true"
+            :onhoverlost "eww update vol-rev=false"
+    (box :class "slider-box" :orientation "v" :halign "center" :space-evenly false :spacing 2
+      (revealer :transition "slideup" :reveal vol-rev :duration "300ms"
+        (scale :class "slider" :value {sys.vol ?: 0} :orientation "v" :flipped true
+               :min 0 :max 100
+               :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%"))
+      (label :class "icon" :text {sys.muted ? "" : ""}))))
 
-(defwidget metric [icon value ?show]
-  (box :class "metric" :orientation "v" :space-evenly false :halign "center"
-       :visible {show ?: true}
-    (label :class "icon" :text icon)
-    (label :class "val"  :text value)))
+(defwidget brightness []
+  (eventbox :halign "center" :onhover "eww update bri-rev=true"
+            :onhoverlost "eww update bri-rev=false"
+    (box :class "slider-box" :orientation "v" :halign "center" :space-evenly false :spacing 2
+      (revealer :transition "slideup" :reveal bri-rev :duration "300ms"
+        (scale :class "slider" :value {bri ?: 50} :orientation "v" :flipped true
+               :min 0 :max 100
+               :onchange "bb ~/.config/eww/brightness-set {}"))
+      (label :class "icon" :text ""))))
+
+(defwidget powermenu []
+  (eventbox :halign "center" :onhover "eww update pow-rev=true"
+            :onhoverlost "eww update pow-rev=false"
+    (box :class "power-box" :orientation "v" :halign "center" :space-evenly false
+      (revealer :transition "slideup" :reveal pow-rev :duration "300ms"
+        (box :orientation "v" :space-evenly false :spacing 6
+          (button :class "pw-lock"   :onclick "setsid -f swaylock"   "")
+          (button :class "pw-logout" :onclick "niri msg action quit" "")
+          (button :class "pw-reboot" :onclick "systemctl reboot"     "")
+          (button :class "pw-off"    :onclick "systemctl poweroff"   "")))
+      (label :class "power-icon" :text ""))))
+
+(defwidget clock []
+  (box :class "clock" :orientation "v" :halign "center" :space-evenly false
+    (button :class "hour" :onclick "eww open --toggle calendar" hour)
+    (button :class "min"  :onclick "eww open --toggle calendar" minute)))
+
+(defwidget cal []
+  (box :class "cal-box"
+    (calendar :class "cal" :day cal-day :month cal-month :year cal-year)))

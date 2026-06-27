@@ -1,3 +1,0 @@
-#!/bin/sh
-# Current sink volume as an integer percent (pipewire).
-wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{print int($2 * 100)}'

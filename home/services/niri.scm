@@ -111,6 +111,8 @@ editor, so the keys agree with the rest of the session."
    (bnd #:mod "Mod"       #:bind "Q" #:cmd "close-window")
    (bnd #:mod "Mod+Shift" #:bind "E" #:cmd "quit")
    (bnd #:mod "Mod"       #:bind "O" #:cmd "toggle-overview")
+   (bnd #:mod "Mod+Shift" #:bind "R"
+        #:cmd (spawn-sh "niri msg action load-config-file; eww reload; makoctl reload"))
 
    ;; focus — Mod+H/L between columns, Mod+J/K within a column
    (bnd #:mod "Mod" #:bind "H" #:cmd "focus-column-left")

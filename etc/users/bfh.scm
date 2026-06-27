@@ -9,4 +9,4 @@
    (group "users")
    (home-directory "/home/bfh")
    (supplementary-groups '("tty" "lp" "wheel" "netdev" "audio" "video"
-                           "kvm" "libvirt"))))
+                           "kvm" "libvirt" "i2c"))))
