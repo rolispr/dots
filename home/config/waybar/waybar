@@ -1,11 +1,9 @@
 {
     "layer": "top",
-    "modules-left": ["sway/workspaces"],
+    "modules-left": ["niri/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["pulseaudio", "network", "battery"],
-    "sway/workspaces": {
-        "disable-scroll": true,
-        "all-outputs": true,
+    "niri/workspaces": {
         "format": "{icon}",
         "format-icons": {
             "1": "❶",
@@ -14,7 +12,7 @@
             "4": "❹",
             "5": "❺",
             "urgent": "❗",
-            "focused": "✦",
+            "active": "✦",
             "default": "○"
         }
     },

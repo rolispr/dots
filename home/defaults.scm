@@ -15,8 +15,10 @@
   #:use-module (home services bash)
   #:use-module (home services emacs)
   #:use-module (home services niri)
-  #:use-module (home theme base)
-  #:use-module (home theme ef-dream)
+  #:use-module (home services alacritty)
+  #:use-module (home services waybar)
+  #:use-module (home services wofi)
+  #:use-module (home desktop)
   #:use-module (etc packages claude-code)
   #:use-module (etc packages claude-agent-acp)
   #:use-module (etc packages qwen-code)
@@ -30,9 +32,9 @@
 ;; Host-specific additions go in (home-overrides). Empty default.
 (define default-extra-packages '())
 
-;; Theme — drives focus-ring colors in niri and is available to any
-;; future capability that consumes a <theme> record.
-(define default-theme ef-dream)
+;; Shared theme: comes from the desktop declaration so every consumer
+;; (niri, alacritty, ...) draws from one palette.
+(define default-theme (desktop-theme default-desktop))
 
 ;; Niri inputs. xkb-options matches what your sway uses today.
 (define default-niri-keyboard-layout "us")
@@ -89,18 +91,18 @@
                  ,(local-file (string-append config-dir "/eww/eww.yuck")))
                 ("eww/eww.scss"
                  ,(local-file (string-append config-dir "/eww/eww.scss")))
-                ("alacritty/alacritty.toml"
-                 ,(local-file (string-append config-dir "/alacritty/.config/alacritty/alacritty.toml")))
+                ,@(if (eq? (desktop-terminal default-desktop) 'alacritty)
+                      (alacritty-capability default-theme)
+                      '())
                 ("wezterm/wezterm.lua"
                  ,(local-file (string-append config-dir "/wezterm/.config/wezterm/wezterm.lua")))
                 ("waybar/config"
                  ,(local-file (string-append config-dir "/waybar/waybar")))
-                ("wofi/style.css"
-                 ,(local-file (string-append config-dir "/wofi/style.css")))
-                ("vim/config"
-                 ,(local-file (string-append config-dir "/vim/.config/vim")))
-                ("waybar/style.css"
-                 ,(local-file (string-append config-dir "/waybar/style.css")))
+                ,@(wofi-capability default-theme)
+                ("vim"
+                 ,(local-file (string-append config-dir "/vim/.config/vim")
+                              #:recursive? #t))
+                ,@(waybar-capability default-theme)
                 ("common-lisp/source-registry.conf.d/guix.conf"
                  ,(local-file (string-append config-dir "/common-lisp/source-registry.conf.d/guix.conf")))
                 ,@(niri-capability
@@ -109,7 +111,7 @@
                    #:xkb-options     default-niri-xkb-options
                    #:bindings        default-niri-bindings
                    #:startups        default-niri-startups)))
-     (home-bash-service #:config-dir config-dir)
+     (home-bash-service #:config-dir config-dir #:desktop default-desktop)
      (service home-dbus-service-type)
      (service home-emacs-config-service-type)
      (service home-pipewire-service-type)

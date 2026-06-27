@@ -65,11 +65,20 @@ broken state — re-executing the body in current-module via primitive-load
 lets define-module re-create the module and the bindings get resolved."
   (unless (hash-ref %loaded-overrides kind)
     (let ((file (overrides-file kind)))
-      (when (file-exists? file)
-        (false-if-exception
+      (cond
+       ((not (file-exists? file))
+        (hash-set! %loaded-overrides kind #t))
+       ;; Only memoize a load that actually completed. During `guix system`
+       ;; the -L auto-discovery walk loads config.scm in a half-built context
+       ;; where this primitive-load throws; memoizing that failure would
+       ;; poison the real evaluation that follows (leaving override-* unbound
+       ;; and silently falling back to defaults). Leave it unmemoized so the
+       ;; real load retries and succeeds.
+       ((false-if-exception
          (save-module-excursion
-          (lambda () (primitive-load file))))))
-    (hash-set! %loaded-overrides kind #t)))
+          (lambda () (primitive-load file) #t)))
+        (hash-set! %loaded-overrides kind #t))
+       (else #f)))))
 
 (define (lookup-setting kind key)
   (load-overrides! kind)

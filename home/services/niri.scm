@@ -12,6 +12,7 @@
   #:use-module (ice-9 format)
   #:use-module (guix gexp)
   #:use-module (home theme base)
+  #:use-module (home desktop)
   #:export (niri-capability
             niri-config
             serialize-kdl
@@ -96,13 +97,16 @@
 
 ;;; default binding set — niri-native (column model)
 
+(define (desktop-launch-bindings desktop)
+  "Return the niri keybindings that launch DESKTOP's terminal, picker, and
+editor, so the keys agree with the rest of the session."
+  (list
+   (bnd #:mod "Mod" #:bind "Return" #:cmd (spawn-sh (desktop-launch-terminal desktop)))
+   (bnd #:mod "Mod" #:bind "D"      #:cmd (spawn-sh (desktop-launch-picker desktop)))
+   (bnd #:mod "Mod" #:bind "E"      #:cmd (spawn-sh (desktop-launch-editor desktop)))))
+
 (define %niri-base-bindings
   (list
-   ;; launch
-   (bnd #:mod "Mod" #:bind "Return" #:cmd (spawn-sh "alacritty"))
-   (bnd #:mod "Mod" #:bind "D"      #:cmd (spawn-sh "wofi --show=drun"))
-   (bnd #:mod "Mod" #:bind "E"      #:cmd (spawn-sh "emacsclient -c"))
-
    ;; session
    (bnd #:mod "Mod"       #:bind "Q" #:cmd "close-window")
    (bnd #:mod "Mod+Shift" #:bind "E" #:cmd "quit")
@@ -174,16 +178,20 @@
    (iota 10 1)))
 
 (define default-niri-bindings
-  (append %niri-base-bindings (numbered-workspace-bindings)))
+  (append (desktop-launch-bindings default-desktop)
+          %niri-base-bindings
+          (numbered-workspace-bindings)))
 
 
 ;;; default startup commands and xkb options
 
 (define default-niri-startups
-  '("waybar"
-    "mako"
-    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=niri"
-    "swaybg -o * -c #000000"))
+  (list (desktop-launch-bar default-desktop)
+        "mako"
+        (format #f "dbus-update-activation-environment --systemd \
+WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=~a"
+                (desktop-xdg-name default-desktop))
+        "swaybg -o * -c #000000"))
 
 (define default-niri-xkb-options "ctrl:swapcaps")
 
@@ -203,7 +211,7 @@
 (define* (niri-layout-config #:key theme)
   (rul 'layout
        (dec 'background-color "transparent")
-       (dec 'gaps 22)
+       (dec 'gaps (shape-gaps (theme-shape theme)))
        (dec 'center-focused-column "never")
        (rul 'preset-column-widths
             (dec 'proportion 0.333333)
@@ -212,7 +220,7 @@
        (rul 'default-column-width
             (dec 'proportion 0.666666))
        (rul 'focus-ring
-            (dec 'width 2)
+            (dec 'width (shape-border (theme-shape theme)))
             (dec 'active-color   (theme-color theme 'accent))
             (dec 'inactive-color (theme-color theme 'bg-active)))
        (rul 'shadow
@@ -248,7 +256,7 @@
         (rul 'animations (dec 'slowdown 1.0))
         (rul 'binds (serialize-bindings bindings))
         (rul 'window-rule
-             (dec 'geometry-corner-radius 8)
+             (dec 'geometry-corner-radius (shape-radius (theme-shape theme)))
              (dec 'clip-to-geometry 'true)
              (dec 'draw-border-with-background 'false))
         (serialized-startups startups)))
