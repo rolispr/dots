@@ -1,63 +1,56 @@
 (defwindow bar
   :monitor 0
-  :geometry (geometry :x "0%"
-                     :y "0%"
-                     :width "100%"
-                     :height "30px"
-                     :anchor "top center")
+  :geometry (geometry :x "0" :y "0" :width "46px" :height "100%" :anchor "left center")
   :stacking "fg"
   :exclusive true
   (bar))
 
-(defvar workspaces '(1 2 3 4 5))
-(defvar current-workspace 1)
+(deflisten workspaces :initial "[]"
+  "bb ~/.config/eww/niri-workspaces.bb")
+(defpoll hour   :interval "10s" "date +%H")
+(defpoll minute :interval "10s" "date +%M")
+(defpoll vol    :interval "2s"  "sh ~/.config/eww/volume")
+(defpoll bri    :interval "5s"  "sh ~/.config/eww/brightness")
+(defpoll bat    :interval "30s" "sh ~/.config/eww/battery")
 
 (defwidget bar []
-  (box :class "bar"
-       :orientation "h"
-    (workspaces)
-    (center)
-    (system-stats)))
+  (box :class "bar" :orientation "v" :space-evenly false
+    (top)
+    (mid)
+    (bottom)))
 
-(defwidget workspaces []
-  (box :class "workspaces"
-       :orientation "h"
-       :space-evenly false
-       :halign "start"
-    (for workspace in workspaces
-      (button :class "${workspace == current-workspace ? 'current' : ''}"
-              :onclick "swaymsg workspace ${workspace}"
-        "${workspace}"))))
+(defwidget top []
+  (box :orientation "v" :valign "start" :space-evenly false :spacing 10
+    (button :class "launcher"
+            :onclick "niri msg action toggle-overview" "▦")
+    (workspaces-w)))
 
-(defwidget center []
-  (box :class "center"
-       :orientation "h"
-       :space-evenly false
-       :halign "center"
-    time))
+(defwidget workspaces-w []
+  (box :class "workspaces" :orientation "v" :space-evenly false
+       :spacing 4 :halign "center"
+    (for ws in workspaces
+      (button :class "ws ${ws.is_focused ? 'current' : ''}"
+              :onclick "niri msg action focus-workspace ${ws.idx}"
+        "${ws.idx}"))))
 
-(defwidget system-stats []
-  (box :class "system"
-       :orientation "h"
-       :space-evenly false
-       :halign "end"
-       :spacing 10
-    (metric :label "🔊"
-            :value volume
-            :onchange "pamixer --set-volume {}")
-    (metric :label "💾"
-            :value {round(EWW_RAM.used_mem_perc, 0)})
-    (metric :label "💻"
-            :value {round(EWW_CPU.avg, 0)})
-    time))
+(defwidget mid []
+  (box :class "clock" :orientation "v" :valign "center" :space-evenly false
+    (label :class "hour" :text hour)
+    (label :class "min"  :text minute)))
 
-(defwidget metric [label value onchange ?class]
-  (box :orientation "h"
-       :class "metric ${class}"
-       :space-evenly false
-    (box :class "label" label)
-    (scale :min 0
-           :max 100
-           :active {onchange != ""}
-           :value value
-           :onchange onchange)))
+(defwidget bottom []
+  (box :orientation "v" :valign "end" :space-evenly false :spacing 12
+    (control)
+    (button :class "lock" :onclick "swaylock" "🔒")))
+
+(defwidget control []
+  (box :class "control" :orientation "v" :space-evenly false :spacing 8
+    (metric :icon "🔊" :value vol)
+    (metric :icon "☀"  :value bri)
+    (metric :icon "🔋" :value bat :show {bat != ""})))
+
+(defwidget metric [icon value ?show]
+  (box :class "metric" :orientation "v" :space-evenly false :halign "center"
+       :visible {show ?: true}
+    (label :class "icon" :text icon)
+    (label :class "val"  :text value)))

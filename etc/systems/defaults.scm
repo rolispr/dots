@@ -50,7 +50,7 @@
 (define default-extra-packages
   (append (map specification->package
                '("openssh"
-                 "sway" "niri" "waybar" "swaylock" "swayidle" "wlgreet"
+                 "sway" "niri" "swaylock" "swayidle" "wlgreet"
                  "xorg-server-xwayland" "alacritty"
                  "pipewire" "wireplumber" "pavucontrol"
                  "wofi" "wl-clipboard" "mako"

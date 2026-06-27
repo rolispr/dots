@@ -1,0 +1,3 @@
+#!/bin/sh
+# Current backlight brightness as an integer percent.
+brightnessctl -m 2>/dev/null | awk -F, '{print $4}' | tr -d '%'

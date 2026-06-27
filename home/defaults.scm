@@ -18,10 +18,12 @@
   #:use-module (home services alacritty)
   #:use-module (home services waybar)
   #:use-module (home services wofi)
+  #:use-module (home services eww)
   #:use-module (home desktop)
   #:use-module (etc packages claude-code)
   #:use-module (etc packages claude-agent-acp)
   #:use-module (etc packages qwen-code)
+  #:use-module (etc packages maple-font)
   #:export (default-extra-packages default-packages default-services
             default-theme
             default-niri-keyboard-layout
@@ -48,12 +50,14 @@
 
 ;; Always-present home packages for bfh.
 (define default-packages
-  (append (list claude-code claude-agent-acp qwen-code)
+  (append (list claude-code claude-agent-acp qwen-code font-maple-mono-nf)
           (specifications->packages
-           (list "guile" "guile-colorized" "guile-readline"
-                 "coreutils" "alacritty" "nushell" "xz" "make" "ncurses"
-                 "pkg-config" "vim" "mako" "libnotify" "slurp" "grimshot"
-                 "wl-clipboard" "wofi" "git" "ripgrep" "cl-trial"
+           (append
+            (desktop-packages default-desktop)
+            (list "guile" "guile-colorized" "guile-readline" "babashka"
+                 "coreutils" "nushell" "xz" "make" "ncurses"
+                 "pkg-config" "mako" "libnotify" "slurp" "grimshot"
+                 "wl-clipboard" "git" "ripgrep" "cl-trial"
                  "sbcl-trial" "fd" "jq" "font-spleen" "font-fira-code"
                  "font-jetbrains-mono" "font-liberation" "font-dejavu"
                  "font-google-noto" "font-terminus" "adwaita-icon-theme"
@@ -79,7 +83,7 @@
                  "mupen64plus-audio-sdl" "mupen64plus-input-sdl"
                  "mupen64plus-video-z64" "book-sicp" "lem" "tiled"
                  "gammastep" "guile-ares-rs" "retroarch-assets"
-                 "libretro-mupen64plus-nx" "retroarch" "flatpak"))))
+                 "libretro-mupen64plus-nx" "retroarch" "flatpak")))))
 
 (define default-services
   (let ((config-dir (string-append (getenv "HOME") "/dots/home/config")))
@@ -87,10 +91,7 @@
      (service home-xdg-configuration-files-service-type
               `(("sway/config"
                  ,(local-file (string-append config-dir "/sway/.config/sway")))
-                ("eww/eww.yuck"
-                 ,(local-file (string-append config-dir "/eww/eww.yuck")))
-                ("eww/eww.scss"
-                 ,(local-file (string-append config-dir "/eww/eww.scss")))
+                ,@(eww-capability default-theme config-dir)
                 ,@(if (eq? (desktop-terminal default-desktop) 'alacritty)
                       (alacritty-capability default-theme)
                       '())

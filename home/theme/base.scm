@@ -20,7 +20,7 @@
 
 (define-record-type* <fonts> fonts make-fonts
   fonts?
-  (mono fonts-mono (default "JetBrains Mono"))
+  (mono fonts-mono (default "Maple Mono NF"))
   (sans fonts-sans (default "DejaVu Sans"))
   (size fonts-size (default 11)))
 
