@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Pick a random background and hand it to swaybg, replacing any running
+# instance. Installed at ~/.config/rice/wallpaper; backgrounds live in
+# ~/.config/rice/backgrounds. Run at niri startup and on Mod+W.
+set -u
+dir="${XDG_CONFIG_HOME:-$HOME/.config}/rice/backgrounds"
+shopt -s nullglob
+imgs=("$dir"/*.jpg "$dir"/*.jpeg "$dir"/*.png "$dir"/*.webp)
+(( ${#imgs[@]} )) || exit 0
+img="${imgs[RANDOM % ${#imgs[@]}]}"
+pkill -x swaybg 2>/dev/null
+exec swaybg -o '*' -i "$img" -m fill
