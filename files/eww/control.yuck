@@ -1,0 +1,42 @@
+(defwidget ctl-panel []
+  (box :class "netmenu ctlpanel-box" :orientation "v" :space-evenly false
+    (box :class "ctl-card" :orientation "v" :space-evenly false
+      (box :class "ctl-profile" :orientation "h" :space-evenly false :valign "center"
+        (box :class "ctl-pfp" :halign "center" :valign "center"
+          (label :class "ctl-pfp-ico" :text ""))
+        (box :orientation "v" :valign "center" :hexpand true :space-evenly false
+          (label :class "ctl-user" :halign "start" :text user)
+          (label :class "ctl-uptime" :halign "start" :limit-width 28 :text uptime)))
+      (box :class "ctl-power" :orientation "h" :halign "fill" :space-evenly true
+        (eventbox :class "pw-a lock" :cursor "pointer" :onhover "eww update hint='Lock screen'" :onhoverlost "eww update hint=''" :onclick "eww close ctlpanel ; setsid -f swaylock" (label :text ""))
+        (eventbox :class "pw-a logout" :cursor "pointer" :onhover "eww update hint='Log out of niri'" :onhoverlost "eww update hint=''" :onclick "niri msg action quit" (label :text ""))
+        (eventbox :class "pw-a reboot" :cursor "pointer" :onhover "eww update hint='Reboot'" :onhoverlost "eww update hint=''" :onclick "systemctl reboot" (label :text ""))
+        (eventbox :class "pw-a suspend" :cursor "pointer" :onhover "eww update hint='Suspend'" :onhoverlost "eww update hint=''" :onclick "eww close ctlpanel ; systemctl suspend" (label :text ""))
+        (eventbox :class "pw-a off" :cursor "pointer" :onhover "eww update hint='Power off'" :onhoverlost "eww update hint=''" :onclick "systemctl poweroff" (label :text ""))))
+    (box :class "ctl-card" :orientation "v" :space-evenly false
+      (box :class "ctl-rings" :orientation "h" :halign "center" :space-evenly true
+        (ring :icon "" :cls "cpu"  :val {round(EWW_CPU.avg, 0)} :name "CPU")
+        (ring :icon "" :cls "ram"  :val {round(EWW_RAM.used_mem_perc, 0)} :name "RAM")
+        (ring :icon "" :cls "disk" :val {round(EWW_DISK["/"].used_perc, 0)} :name "DISK")
+        (ring :icon "" :cls "temp" :val {sys.temp ?: 0} :name "TEMP")))
+    (box :class "ctl-card ctl-sliders" :orientation "v" :space-evenly false :spacing 16
+      (box :class "ctl-srow" :orientation "h" :space-evenly false :spacing 14 :valign "center"
+        (label :class "ctl-sico vol" :text "")
+        (scale :class "ctl-scale vol" :hexpand true :value {sys.vol ?: 0} :min 0 :max 100
+               :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%"))
+      (box :class "ctl-srow" :orientation "h" :space-evenly false :spacing 14 :valign "center"
+        (label :class "ctl-sico bri" :text "")
+        (scale :class "ctl-scale bri" :hexpand true :value {bri ?: 50} :min 0 :max 100
+               :onchange "cd ~ && bb ~/.config/eww/brightness-set {}")))))
+
+(defwidget ring [icon cls val name]
+  (box :class "ctl-ring-box ${cls}" :orientation "v" :space-evenly false :halign "center"
+    (circular-progress :class "ctl-ring ${cls}" :value {val > 100 ? 100 : val} :thickness 5
+      (label :class "ctl-ring-ico" :text icon))
+    (label :class "ctl-ring-lbl" :text "${name} ${val}${cls == 'temp' ? 'C' : '%'}")))
+
+;; A powerline status line: a transparent strip whose left end runs under the
+;; sidebar (echo-lead), then a slanted accent cap (echo-tip ramps it out of the
+;; sidebar, echo-slant feeds into the body), then the message and a live
+;; system readout. `hint' is what any component reports on hover; idle it falls
+;; back to the focused window title, then user@host.
