@@ -1,0 +1,31 @@
+(defwidget audio-menu []
+  (box :class "netmenu" :orientation "v" :space-evenly false
+    (box :class "nm-card nm-head" :orientation "h" :space-evenly false :valign "center"
+      (label :class "nm-head-ico" :text "")
+      (box :orientation "v" :valign "center" :hexpand true :space-evenly false
+        (label :class "nm-title" :halign "start" :text "Audio")
+        (label :class {sys.muted ? "nm-sub off" : "nm-sub on"} :halign "start"
+               :text "${sys.vol ?: 0}%${sys.muted ? '  muted' : ''}")))
+    (box :class "nm-card" :orientation "h" :space-evenly false :spacing 12 :valign "center"
+      (button :class "audio-mute" :onclick "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+              {sys.muted ? "" : ""})
+      (scale :class "menu-slider" :hexpand true :value {sys.vol ?: 0}
+             :min 0 :max 100
+             :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%")
+      (label :class "audio-pct" :text "${sys.vol ?: 0}%"))
+    (box :class "nm-card nm-list-card" :orientation "v" :space-evenly false
+      (label :class "nm-subhead" :halign "start" :text "Output")
+      (scroll :vscroll true :class "nm-scroll"
+        (box :orientation "v" :space-evenly false
+          (for s in sinks
+            (sink-row :name {s.name} :desc {s.desc} :default {s.default})))))))
+
+(defwidget sink-row [name desc default]
+  (eventbox :class "nm-row ${default ? 'active' : ''}" :cursor "pointer"
+    :onhover "eww update hint='${default ? 'Current output: ' : 'Switch output to: '}${desc}'"
+    :onhoverlost "eww update hint=''"
+    :onclick "pactl set-default-sink '${name}'"
+    (box :orientation "h" :space-evenly false :spacing 10 :valign "center"
+      (label :class "nm-sig" :text "")
+      (label :class {default ? "nm-name active" : "nm-name"} :halign "start" :hexpand true :limit-width 32 :text desc)
+      (label :class "nm-check" :text {default ? "" : ""}))))

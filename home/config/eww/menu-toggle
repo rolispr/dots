@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Toggle one eww popup, closing every other popup first so only one is ever
+# open at a time. Arg: the window name to toggle.
+target="$1"
+for w in audioctl netctl mediactl ctlpanel calendar; do
+    [ "$w" != "$target" ] && eww close "$w" 2>/dev/null
+done
+eww open --toggle "$target"

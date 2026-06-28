@@ -1,0 +1,16 @@
+#!/usr/bin/env bb
+;; Tiny nREPL client: eww onclicks call into the live broker.
+;; usage: eww-rpc FN ARG...   ->  evals (FN ARG...) in the broker
+(require '[clojure.string :as str])
+
+(let [[op & args] *command-line-args*
+      code (str "(" op " " (str/join " " (map pr-str args)) ")")
+      port (Integer/parseInt (or (System/getenv "EWW_BROKER_PORT") "1667"))
+      b    (fn [s] (let [bs (.getBytes s "UTF-8")] (str (alength bs) ":" s)))
+      msg  (str "d" (b "code") (b code) (b "op") (b "eval") "e")]
+  (with-open [sock (java.net.Socket. "127.0.0.1" (int port))
+              os   (.getOutputStream sock)]
+    (.write os (.getBytes msg "UTF-8"))
+    (.flush os)
+    (.setSoTimeout sock 1000)
+    (try (.read (.getInputStream sock) (byte-array 512)) (catch Exception _ nil))))

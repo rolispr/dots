@@ -1,0 +1,28 @@
+(defwidget net-menu []
+  (box :class "netmenu" :orientation "v" :space-evenly false
+    (box :class "nm-card nm-head" :orientation "h" :space-evenly false :valign "center"
+      (label :class "nm-head-ico" :text "")
+      (box :orientation "v" :valign "center" :hexpand true :space-evenly false
+        (label :class "nm-title" :halign "start" :text "Network")
+        (label :class {sys.net != "" ? "nm-sub on" : "nm-sub off"} :halign "start"
+               :text {sys.net != "" ? sys.net : "Disconnected"})))
+    (box :class "nm-card nm-list-card" :orientation "v" :space-evenly false
+      (scroll :vscroll true :class "nm-scroll"
+        (box :orientation "v" :space-evenly false
+          (for n in netlist
+            (wifi-row :ssid {n.ssid} :in_use {n.in_use} :secure {n.secure} :saved {n.saved} :sig {n.sig}))))
+      (box :class "nm-actions" :orientation "h" :halign "center" :space-evenly false :spacing 8
+        (for a in netactions
+          (act-btn :label {a.label} :style {a.style} :kind {a.kind}))))))
+
+(defwidget wifi-row [ssid in_use secure saved sig]
+  (eventbox :class "nm-row ${in_use ? 'active' : ''}" :cursor "pointer"
+    :onclick "bb ~/.config/eww/eww-rpc select! '${ssid}'"
+    (box :orientation "h" :space-evenly false :spacing 10 :valign "center"
+      (label :class "nm-sig ${sig}" :text "")
+      (label :class {in_use ? "nm-name active" : "nm-name"} :halign "start" :hexpand true :limit-width 20 :text ssid)
+      (label :class "nm-lock" :text {secure ? "" : ""})
+      (label :class "nm-check" :text {in_use ? "" : ""}))))
+
+(defwidget act-btn [label style kind]
+  (button :class "nm-btn ${style}" :onclick "bb ~/.config/eww/eww-rpc act! '${kind}'" label))
