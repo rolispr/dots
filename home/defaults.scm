@@ -19,6 +19,7 @@
   #:use-module (home services waybar)
   #:use-module (home services fuzzel)
   #:use-module (home services eww)
+  #:use-module (home services gtk)
   #:use-module (home desktop)
   #:use-module (etc packages claude-code)
   #:use-module (etc packages claude-agent-acp)
@@ -57,7 +58,7 @@
             (list "guile" "guile-colorized" "guile-readline" "babashka"
                  "coreutils" "nushell" "xz" "make" "ncurses"
                  "pkg-config" "mako" "libnotify" "slurp" "grimshot"
-                 "wl-clipboard" "git" "ripgrep" "cl-trial"
+                 "wl-clipboard" "swaybg" "playerctl" "mpv" "git" "ripgrep" "cl-trial"
                  "sbcl-trial" "fd" "jq" "font-spleen" "font-fira-code"
                  "font-jetbrains-mono" "font-liberation" "font-dejavu"
                  "font-google-noto" "font-terminus" "adwaita-icon-theme"
@@ -92,6 +93,7 @@
               `(("sway/config"
                  ,(local-file (string-append config-dir "/sway/.config/sway")))
                 ,@(eww-capability default-theme config-dir)
+                ,@(gtk-capability default-theme)
                 ,@(if (eq? (desktop-terminal default-desktop) 'alacritty)
                       (alacritty-capability default-theme)
                       '())
@@ -106,6 +108,11 @@
                 ,@(waybar-capability default-theme)
                 ("common-lisp/source-registry.conf.d/guix.conf"
                  ,(local-file (string-append config-dir "/common-lisp/source-registry.conf.d/guix.conf")))
+                ("rice/wallpaper"
+                 ,(local-file (string-append config-dir "/rice/wallpaper")))
+                ("rice/backgrounds"
+                 ,(local-file (string-append config-dir "/rice/imgs/background")
+                              #:recursive? #t))
                 ,@(niri-capability
                    #:theme           default-theme
                    #:keyboard-layout default-niri-keyboard-layout
@@ -115,6 +122,7 @@
      (home-bash-service #:config-dir config-dir #:desktop default-desktop)
      (service home-dbus-service-type)
      (service home-emacs-config-service-type)
+     (service home-eww-broker-service-type)
      (service home-pipewire-service-type)
      (service home-ssh-agent-service-type)
      (service home-openssh-service-type

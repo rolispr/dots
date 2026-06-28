@@ -73,22 +73,26 @@
     (other (symbol->string other))))
 
 (define (desktop-launch-editor d)
-  "Return the shell command that opens D's editor as a window."
+  "Return the shell command that opens D's editor as a window.  For emacs this
+connects to the emacs-daemon home service (never spawns a competing instance --
+`-a emacs' did, which is why Mod+E opened a fresh Emacs)."
   (match (desktop-editor d)
-    ('emacs "emacsclient -c -a emacs")
+    ('emacs "emacsclient -c")
     (other (symbol->string other))))
 
 (define (desktop-editor-command d)
   "Return the EDITOR/VISUAL value for D's editor (a terminal-capable command
 suitable for tools that spawn $EDITOR)."
   (match (desktop-editor d)
-    ('emacs "emacsclient -ca emacs")
+    ('emacs "emacsclient -t")
     (other (symbol->string other))))
 
 (define (desktop-launch-bar d)
   "Return the shell command that starts D's status bar."
   (match (desktop-bar d)
-    ('eww "eww open bar")
+    ;; echo first, bar last: same layer, later surface paints on top, so the
+    ;; sidebar overlaps the echo's left end and the echo tucks under it.
+    ('eww "eww open-many echo bar")
     (other (symbol->string other))))
 
 (define (desktop-launch-compositor d)

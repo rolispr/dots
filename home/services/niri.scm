@@ -111,6 +111,8 @@ editor, so the keys agree with the rest of the session."
    (bnd #:mod "Mod"       #:bind "Q" #:cmd "close-window")
    (bnd #:mod "Mod+Shift" #:bind "E" #:cmd "quit")
    (bnd #:mod "Mod"       #:bind "O" #:cmd "toggle-overview")
+   (bnd #:mod "Mod"       #:bind "W"
+        #:cmd (spawn-sh "bash ~/.config/rice/wallpaper"))
    (bnd #:mod "Mod+Shift" #:bind "R"
         #:cmd (spawn-sh "niri msg action load-config-file; eww reload; makoctl reload"))
 
@@ -193,7 +195,11 @@ editor, so the keys agree with the rest of the session."
         (format #f "dbus-update-activation-environment --systemd \
 WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=~a"
                 (desktop-xdg-name default-desktop))
-        "swaybg -o * -c #000000"))
+        ;; rebind the emacs daemon (a home shepherd service) to THIS session's
+        ;; Wayland display -- the persistent shepherd doesn't restart on login,
+        ;; and pgtk Emacs needs the live display to make GUI frames.
+        "herd restart emacs-daemon"
+        "bash ~/.config/rice/wallpaper"))
 
 (define default-niri-xkb-options "ctrl:swapcaps")
 
@@ -235,6 +241,19 @@ WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=~a"
             (dec 'left 4) (dec 'right 4)
             (dec 'top 4)  (dec 'bottom 4))))
 
+(define* (niri-overview-config #:key theme)
+  ;; The zoomed-out view: a deliberate dark field (bg-dim) behind the
+  ;; workspace tiles so the surround reads as chrome, not unstyled gray,
+  ;; and a shadow on each tile so the wallpaper'd workspaces float.
+  (rul 'overview
+       (dec 'zoom 0.5)
+       (dec 'backdrop-color (theme-color theme 'bg-dim))
+       (rul 'workspace-shadow
+            (dec 'softness 40)
+            (dec 'spread 10)
+            (dec 'offset (prop '((x 0) (y 10))))
+            (dec 'color "#00000060"))))
+
 (define (niri-intro)
   "// Niri configuration — generated from (home services niri).
 // Do not edit by hand; edit ~/dots/home/services/niri.scm instead.")
@@ -251,6 +270,7 @@ WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=~a"
         (niri-input-config  #:keyboard-layout keyboard-layout
                             #:xkb-options     xkb-options)
         (niri-layout-config #:theme theme)
+        (niri-overview-config #:theme theme)
         (rul 'hotkey-overlay (dec 'skip-at-startup #t))
         (dec 'prefer-no-csd #t)
         (dec 'screenshot-path
