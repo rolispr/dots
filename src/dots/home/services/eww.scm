@@ -13,64 +13,45 @@
   #:use-module (gnu home services shepherd)
   #:use-module (gnu services shepherd)
   #:use-module (dots theme base)
+  #:use-module (dots config css)
   #:export (eww-style
             eww-capability
             home-eww-broker-service-type))
-
-;;; CSS builders. `d' is one declaration ("prop: val"); `rule' wraps a
-;;; selector around declarations; `rules' shares declarations across several
-;;; selectors. Colours go inline next to their property -- no positional args.
-(define (d prop val) (string-append prop ": " val))
-(define (rule sel . decls)
-  (string-append sel " {\n  " (string-join decls ";\n  ") ";\n}\n\n"))
-(define (rules sels . decls)
-  (apply rule (string-join sels ", ") decls))
 
 (define (eww-style-overrides theme)
   "Trailing rules appended after the main sheet so the cascade picks them: the
 sidebar reads as frosted glass over the wallpaper instead of a solid slab, and
 the echo strip becomes a designed status line with an accent prompt segment."
   (define (c role) (theme-color theme role))
-  (string-append
-   (rule ".bar"
-         (d "background-color" (hex->rgba (c 'bg) 0.72))
-         (d "border" (string-append "1px solid " (c 'border)))
-         ;; blur only, no spread, kept within the 6px margin so the halo's
-         ;; corners stay rounded instead of being clipped square by the surface.
-         (d "box-shadow" "0 0 5px 0 #0a0a10"))
-   ;; echo: a powerline status line. The strip itself is transparent; only the
-   ;; accent cap and the body carry colour, so it reads as a slanted pill that
-   ;; ramps out from under the sidebar rather than a full-width box. Left to
-   ;; right: lead (transparent, sits under the sidebar) -> tip ( ramps the
-   ;; accent up) -> prompt (accent) -> slant ( accent into body) -> body.
-   (let ((body (hex->rgba (c 'bg) 0.88))
-         (wedge "26px"))                       ; glyph size ~ strip height
-     (string-append
-      (rule ".echo" (d "background-color" "transparent"))
-      ;; the left run that tucks under the sidebar; width >= sidebar + margin
-      (rule ".echo-lead" (d "min-width" "70px") (d "background-color" "transparent"))
-      ;; leading wedge: accent on transparent, so the cap's left edge is a slant
-      (rule ".echo-tip"
-            (d "color" (c 'accent)) (d "background-color" "transparent")
-            (d "font-size" wedge) (d "margin-right" "-1px"))
-      (rule ".echo-prompt"
-            (d "background-color" (c 'accent)) (d "color" (c 'accent-fg)))
-      (rule ".echo-ico" (d "color" (c 'accent-fg)) (d "font-size" "13px") (d "padding" "0 6px"))
-      ;; trailing wedge: accent on the body colour, feeding the cap into the body
-      (rule ".echo-slant"
-            (d "color" (c 'accent)) (d "background-color" body)
-            (d "font-size" wedge) (d "margin" "0 -1px"))
-      (rule ".echo-body" (d "background-color" body))
-      (rule ".echo-text" (d "color" (c 'fg)) (d "font-size" "13px") (d "padding" "0 12px"))
-      (rule ".echo-stat" (d "color" (c 'fg-dim)) (d "font-size" "12px") (d "padding" "0 16px 0 8px"))))))
+  ;; echo: a powerline status line. The strip itself is transparent; only the
+  ;; accent cap and the body carry colour, so it reads as a slanted pill that
+  ;; ramps out from under the sidebar rather than a full-width box.
+  (define body  (hex->rgba (c 'bg) 0.88))
+  (define wedge "26px")                       ; glyph size ~ strip height
+  `((".bar" (background-color . ,(hex->rgba (c 'bg) 0.72))
+            (border . ,(string-append "1px solid " (c 'border)))
+            ;; blur only, no spread, kept within the 6px margin so the halo's
+            ;; corners stay rounded instead of being clipped square.
+            (box-shadow . "0 0 5px 0 #0a0a10"))
+    (".echo" (background-color . "transparent"))
+    (".echo-lead" (min-width . "70px") (background-color . "transparent"))
+    (".echo-tip" (color . ,(c 'accent)) (background-color . "transparent")
+                 (font-size . ,wedge) (margin-right . "-1px"))
+    (".echo-prompt" (background-color . ,(c 'accent)) (color . ,(c 'accent-fg)))
+    (".echo-ico" (color . ,(c 'accent-fg)) (font-size . "13px") (padding . "0 6px"))
+    (".echo-slant" (color . ,(c 'accent)) (background-color . ,body)
+                   (font-size . ,wedge) (margin . "0 -1px"))
+    (".echo-body" (background-color . ,body))
+    (".echo-text" (color . ,(c 'fg)) (font-size . "13px") (padding . "0 12px"))
+    (".echo-stat" (color . ,(c 'fg-dim)) (font-size . "12px") (padding . "0 16px 0 8px"))))
 
 (define (eww-style theme)
-  "Return the eww eww.scss themed from THEME. Read top-down: tunables first,
-then bar, popups, and the control panel, each rule self-contained."
+  "Return the eww eww.scss themed from THEME, as CSS over a data description.
+Read top-down: tunables, then bar, popups, control panel; the overrides are
+appended last so the cascade picks them."
   (define (c role) (theme-color theme role))
-
   ;; --- tunables: change here, not in scattered literals ---------------------
-  (define mono     (fonts-mono (theme-fonts theme)))
+  (define mono     (format #f "~s" (fonts-mono (theme-fonts theme))))
   (define cell     "40px")   ; bar icon cell: every clickable icon is this wide
   (define cell-pad "9px 0")  ; ... vertical only; width comes from `cell'
   (define cell-rad "12px")
@@ -79,183 +60,168 @@ then bar, popups, and the control panel, each rule self-contained."
   (define card-rad  "15px")  ; inner card / list / config corner
   (define shadow      "0 2px 6px 2px #0a0a10")
   (define card-shadow "0 2px 3px 2px #06060b")
+  (css
+   (append
+    `(;; reset + global font; transitions on the interactive bits
+      ("*" (all . unset) (font-family . ,mono) (font-size . "13px"))
+      ("button, eventbox" (transition . "background-color 0.25s, color 0.25s"))
 
-  (string-append
-   ;; reset + global font; transitions on the interactive bits
-   (format #f "* { all: unset; font-family: ~s; font-size: 13px; }\n" mono)
-   "button, eventbox { transition: background-color 0.25s, color 0.25s; }\n\n"
+      ;; ---- bar -------------------------------------------------------------
+      (".bar" (background-color . ,(c 'bg)) (color . ,(c 'fg))
+       (padding . "8px 0") (margin . "6px")
+       (border-radius . "16px") (box-shadow . ,shadow))
 
-   ;; ---- bar ----------------------------------------------------------------
-   (rule ".bar"
-         (d "background-color" (c 'bg)) (d "color" (c 'fg))
-         (d "padding" "8px 0") (d "margin" "6px")
-         (d "border-radius" "16px") (d "box-shadow" shadow))
+      ;; one uniform cell for every clickable bar icon
+      (".viewer, .picker, .launch, .apps .app, .icon, .net, .media, .ctl, .workspaces .ws"
+       (background-color . ,(c 'bg-alt)) (color . ,(c 'fg-alt))
+       (min-width . ,cell) (padding . ,cell-pad)
+       (border-radius . ,cell-rad) (margin . "3px 0")
+       (font-size . ,glyph))
+      (".net" (color . ,(c 'cyan)))
+      (".ctl" (color . ,(c 'accent)))
+      ;; per-glyph ink-bearing correction, nudging each to the ~33px column
+      (".viewer .bar-glyph" (margin-right . "2px"))
+      (".picker .bar-glyph" (margin-right . "2px"))
+      (".launch .bar-glyph" (margin-right . "3px"))
+      (".term .bar-glyph" (margin-right . "1px"))
+      (".web .bar-glyph" (margin-right . "3px"))
+      (".files .bar-glyph" (margin-right . "3px"))
+      (".edit .bar-glyph" (margin-right . "6px"))
+      (".icon .bar-glyph" (margin-right . "3px"))
+      (".media .bar-glyph" (margin-right . "5px"))
+      (".net .bar-glyph" (margin-right . "6px"))
+      (".ctl .bar-glyph" (margin-right . "4px"))
+      (".workspaces .ws .bar-glyph" (margin-left . "2px"))
+      (".workspaces .ws.current" (color . ,(c 'accent-fg)) (background-color . ,(c 'accent)))
 
-   ;; one uniform cell for every clickable bar icon -> a tidy centred column.
-   ;; the glyph is centred inside the cell by the ib widget (hexpand label).
-   (rules '(".viewer" ".picker" ".launch" ".apps .app" ".icon"
-            ".net" ".media" ".ctl" ".workspaces .ws")
-          (d "background-color" (c 'bg-alt)) (d "color" (c 'fg-alt))
-          (d "min-width" cell) (d "padding" cell-pad)
-          (d "border-radius" cell-rad) (d "margin" "3px 0")
-          (d "font-size" glyph))
-   ;; semantic accents: net = status light; ctl = the system/control panel entry
-   (rule ".net" (d "color" (c 'cyan)))
-   (rule ".ctl" (d "color" (c 'accent)))
-   ;; Per-glyph ink-bearing correction (measured from a screenshot, bar
-   ;; center=32). These nerd glyphs each sit at a different x in their advance,
-   ;; so no uniform shift aligns them; nudge each to the ~33px column the app
-   ;; icons fall on. margin on a centred, hexpanding label shifts it by half.
-   (rule ".viewer .bar-glyph" (d "margin-right" "2px"))          ; 33.1 -> 32
-   (rule ".picker .bar-glyph" (d "margin-right" "2px"))          ; 33.2
-   (rule ".launch .bar-glyph" (d "margin-right" "3px"))          ; 33.5
-   (rule ".term .bar-glyph" (d "margin-right" "1px"))            ; 32.5
-   (rule ".web .bar-glyph" (d "margin-right" "3px"))             ; 33.6
-   (rule ".files .bar-glyph" (d "margin-right" "3px"))           ; 33.3
-   (rule ".edit .bar-glyph" (d "margin-right" "6px"))            ; 35.0
-   (rule ".icon .bar-glyph" (d "margin-right" "3px"))            ; volume 33.7
-   (rule ".media .bar-glyph" (d "margin-right" "5px"))           ; music  34.5
-   (rule ".net .bar-glyph" (d "margin-right" "6px"))             ; wifi   35.0
-   (rule ".ctl .bar-glyph" (d "margin-right" "4px"))             ; avatar (noisy)
-   (rule ".workspaces .ws .bar-glyph" (d "margin-left" "2px"))   ; nums   31.2
-   (rule ".workspaces .ws.current"
-         (d "color" (c 'accent-fg)) (d "background-color" (c 'accent)))
+      (".viewer:hover, .picker:hover, .launch:hover, .apps .app:hover, .icon:hover, .net:hover, .media:hover, .ctl:hover, .clock:hover, .workspaces .ws:hover"
+       (background-color . ,(c 'bg-active)) (color . ,(c 'accent-fg)))
 
-   (rules '(".viewer:hover" ".picker:hover" ".launch:hover" ".apps .app:hover"
-            ".icon:hover" ".net:hover" ".media:hover" ".ctl:hover"
-            ".clock:hover" ".workspaces .ws:hover")
-          (d "background-color" (c 'bg-active)) (d "color" (c 'accent-fg)))
+      (".clock" (color . ,(c 'fg)) (margin-top . "6px"))
+      (".clock .hour" (font-size . "15px") (font-weight . "bold"))
+      (".clock .min" (color . ,(c 'fg-dim)) (font-size . "15px"))
 
-   (rule ".clock" (d "color" (c 'fg)) (d "margin-top" "6px"))
-   ".clock .hour { font-size: 15px; font-weight: bold; }\n"
-   (rule ".clock .min" (d "color" (c 'fg-dim)) (d "font-size" "15px"))
+      ;; ---- calendar --------------------------------------------------------
+      (".cal-box" (background-color . ,(c 'bg-alt)) (border-radius . ,card-rad) (padding . "10px"))
+      ("calendar" (color . ,(c 'fg)))
+      ("calendar:selected" (background-color . ,(c 'accent)) (color . ,(c 'accent-fg)))
 
-   ;; ---- calendar -----------------------------------------------------------
-   (rule ".cal-box" (d "background-color" (c 'bg-alt))
-         (d "border-radius" card-rad) (d "padding" "10px"))
-   (rule "calendar" (d "color" (c 'fg)))
-   (rule "calendar:selected" (d "background-color" (c 'accent)) (d "color" (c 'accent-fg)))
+      ;; ---- popup chrome shared by every menu -------------------------------
+      (".netmenu" (background-color . ,(c 'bg)) (color . ,(c 'fg))
+       (border-radius . ,popup-rad) (padding . "8px") (margin . "8px")
+       (box-shadow . ,shadow) (min-width . "360px"))
 
-   ;; ---- popup chrome shared by every menu ----------------------------------
-   (rule ".netmenu"
-         (d "background-color" (c 'bg)) (d "color" (c 'fg))
-         (d "border-radius" popup-rad) (d "padding" "8px") (d "margin" "8px")
-         (d "box-shadow" shadow) (d "min-width" "360px"))
+      ;; ---- network menu (card style) ---------------------------------------
+      (".nm-card" (background-color . ,(c 'bg-dim)) (border-radius . "16px")
+       (padding . "12px") (margin . "6px") (box-shadow . ,card-shadow))
+      (".nm-head" (padding . "12px 14px"))
+      (".nm-head-ico" (font-size . "22px") (color . ,(c 'accent)) (margin-right . "14px"))
+      (".nm-title" (font-size . "17px") (font-weight . "bold") (color . ,(c 'fg)))
+      (".nm-sub" (font-size . "13px"))
+      (".nm-sub.on" (color . ,(c 'green)))
+      (".nm-sub.off" (color . ,(c 'fg-dim)))
+      (".nm-list-card" (padding . "6px"))
+      (".nm-scroll" (min-height . "14rem"))
+      (".nm-row" (background-color . "transparent") (border . "none")
+       (box-shadow . "none") (outline . "none")
+       (border-radius . "12px") (padding . "10px 12px") (margin . "2px")
+       (transition . "background-color 0.2s"))
+      (".nm-row:hover" (background-color . ,(c 'bg-active)))
+      (".nm-row.active" (background-color . ,(c 'bg-alt)))
+      (".nm-row.sel" (background-color . ,(c 'bg-active))
+       (box-shadow . ,(string-append "inset 3px 0 0 0 " (c 'accent))))
+      (".nm-sig" (font-size . "14px") (color . ,(c 'fg-dim)))
+      (".nm-sig.hi" (color . ,(c 'green)))
+      (".nm-sig.mid" (color . ,(c 'yellow)))
+      (".nm-sig.lo" (color . ,(c 'red)))
+      (".nm-name" (font-size . "14px") (color . ,(c 'fg)))
+      (".nm-name.active" (color . ,(c 'green)) (font-weight . "bold"))
+      (".nm-lock" (font-size . "12px") (color . ,(c 'fg-dim)))
+      (".nm-check" (font-size . "13px") (color . ,(c 'green)))
+      (".nm-actions" (padding . "6px 4px 2px 4px"))
+      (".nm-btn" (background-color . ,(c 'bg-active)) (color . ,(c 'fg))
+       (border . "none") (box-shadow . "none") (outline . "none")
+       (padding . "10px 20px") (border-radius . "12px")
+       (transition . "background-color 0.2s, color 0.2s"))
+      (".nm-btn:hover" (background-color . ,(c 'bg-alt)))
+      (".nm-btn.go" (background-color . ,(c 'accent)) (color . ,(c 'accent-fg)))
+      (".nm-btn.no" (color . ,(c 'red)))
 
-   ;; ---- network menu (card style) ------------------------------------------
-   (rule ".nm-card" (d "background-color" (c 'bg-dim)) (d "border-radius" "16px")
-         (d "padding" "12px") (d "margin" "6px") (d "box-shadow" card-shadow))
-   (rule ".nm-head" (d "padding" "12px 14px"))
-   (rule ".nm-head-ico" (d "font-size" "22px") (d "color" (c 'accent)) (d "margin-right" "14px"))
-   (rule ".nm-title" (d "font-size" "17px") (d "font-weight" "bold") (d "color" (c 'fg)))
-   (rule ".nm-sub" (d "font-size" "13px"))
-   (rule ".nm-sub.on" (d "color" (c 'green)))
-   (rule ".nm-sub.off" (d "color" (c 'fg-dim)))
-   (rule ".nm-list-card" (d "padding" "6px"))
-   (rule ".nm-scroll" (d "min-height" "14rem"))
-   (rule ".nm-row" (d "background-color" "transparent") (d "border" "none")
-         (d "box-shadow" "none") (d "outline" "none")
-         (d "border-radius" "12px") (d "padding" "10px 12px") (d "margin" "2px")
-         (d "transition" "background-color 0.2s"))
-   (rule ".nm-row:hover" (d "background-color" (c 'bg-active)))
-   (rule ".nm-row.active" (d "background-color" (c 'bg-alt)))
-   (rule ".nm-row.sel" (d "background-color" (c 'bg-active))
-         (d "box-shadow" (string-append "inset 3px 0 0 0 " (c 'accent))))
-   (rule ".nm-sig" (d "font-size" "14px") (d "color" (c 'fg-dim)))
-   (rule ".nm-sig.hi" (d "color" (c 'green)))
-   (rule ".nm-sig.mid" (d "color" (c 'yellow)))
-   (rule ".nm-sig.lo" (d "color" (c 'red)))
-   (rule ".nm-name" (d "font-size" "14px") (d "color" (c 'fg)))
-   (rule ".nm-name.active" (d "color" (c 'green)) (d "font-weight" "bold"))
-   (rule ".nm-lock" (d "font-size" "12px") (d "color" (c 'fg-dim)))
-   (rule ".nm-check" (d "font-size" "13px") (d "color" (c 'green)))
-   (rule ".nm-actions" (d "padding" "6px 4px 2px 4px"))
-   (rule ".nm-btn" (d "background-color" (c 'bg-active)) (d "color" (c 'fg))
-         (d "border" "none") (d "box-shadow" "none") (d "outline" "none")
-         (d "padding" "10px 20px") (d "border-radius" "12px")
-         (d "transition" "background-color 0.2s, color 0.2s"))
-   (rule ".nm-btn:hover" (d "background-color" (c 'bg-alt)))
-   (rule ".nm-btn.go" (d "background-color" (c 'accent)) (d "color" (c 'accent-fg)))
-   (rule ".nm-btn.no" (d "color" (c 'red)))
+      ;; ---- subheader (audio "Output" label) --------------------------------
+      (".nm-subhead" (font-size . "13px") (color . ,(c 'fg-dim)) (margin . "2px 4px 8px 4px"))
 
-   ;; ---- subheader (audio "Output" label) -----------------------------------
-   (rule ".nm-subhead" (d "font-size" "13px") (d "color" (c 'fg-dim))
-         (d "margin" "2px 4px 8px 4px"))
+      ;; ---- sliders shared by the audio + media menus -----------------------
+      (".menu-slider trough" (background-color . ,(c 'bg-alt)) (min-height . "8px") (border-radius . "5px"))
+      (".menu-slider trough highlight" (background-color . ,(c 'accent)) (border-radius . "5px"))
 
-   ;; ---- sliders shared by the audio + media menus --------------------------
-   (rule ".menu-slider trough" (d "background-color" (c 'bg-alt))
-         (d "min-height" "8px") (d "border-radius" "5px"))
-   (rule ".menu-slider trough highlight" (d "background-color" (c 'accent)) (d "border-radius" "5px"))
+      ;; ---- audio menu ------------------------------------------------------
+      (".audio-mute" (color . ,(c 'cyan)) (font-size . "20px") (padding . "0 4px"))
+      (".audio-mute:hover" (color . ,(c 'accent)))
+      (".audio-pct" (color . ,(c 'fg-dim)) (min-width . "38px"))
 
-   ;; ---- audio menu ---------------------------------------------------------
-   (rule ".audio-mute" (d "color" (c 'cyan)) (d "font-size" "20px") (d "padding" "0 4px"))
-   (rule ".audio-mute:hover" (d "color" (c 'accent)))
-   (rule ".audio-pct" (d "color" (c 'fg-dim)) (d "min-width" "38px"))
+      ;; ---- media player (card vocabulary) ----------------------------------
+      (".media-info" (padding . "2px 2px 12px 2px"))
+      (".media-art" (min-width . "64px") (min-height . "64px")
+       (border-radius . "12px") (background-size . "cover")
+       (background-position . "center") (background-color . ,(c 'bg-active)))
+      (".media-art-ico" (font-size . "26px") (color . ,(c 'fg-dim)))
+      (".media-title" (font-size . "15px") (font-weight . "bold") (color . ,(c 'fg)))
+      (".media-artist" (color . ,(c 'fg-dim)))
+      (".media-times" (padding . "6px 2px 2px 2px"))
+      (".media-time" (font-size . "11px") (color . ,(c 'fg-dim)))
+      (".media-ctrl" (padding . "10px 0 2px 0"))
+      (".media-btn" (color . ,(c 'fg)) (font-size . "20px") (padding . "6px"))
+      (".media-btn:hover" (color . ,(c 'accent)))
+      (".media-none-box" (padding . "8px"))
+      (".media-none" (color . ,(c 'fg-dim)) (padding . "14px"))
 
-   ;; ---- media player (card vocabulary) -------------------------------------
-   (rule ".media-info" (d "padding" "2px 2px 12px 2px"))
-   (rule ".media-art" (d "min-width" "64px") (d "min-height" "64px")
-         (d "border-radius" "12px") (d "background-size" "cover")
-         (d "background-position" "center") (d "background-color" (c 'bg-active)))
-   (rule ".media-art-ico" (d "font-size" "26px") (d "color" (c 'fg-dim)))
-   (rule ".media-title" (d "font-size" "15px") (d "font-weight" "bold") (d "color" (c 'fg)))
-   (rule ".media-artist" (d "color" (c 'fg-dim)))
-   (rule ".media-times" (d "padding" "6px 2px 2px 2px"))
-   (rule ".media-time" (d "font-size" "11px") (d "color" (c 'fg-dim)))
-   (rule ".media-ctrl" (d "padding" "10px 0 2px 0"))
-   (rule ".media-btn" (d "color" (c 'fg)) (d "font-size" "20px") (d "padding" "6px"))
-   (rule ".media-btn:hover" (d "color" (c 'accent)))
-   (rule ".media-none-box" (d "padding" "8px"))
-   (rule ".media-none" (d "color" (c 'fg-dim)) (d "padding" "14px"))
+      ;; ---- control panel: cards (profile / stats / sliders) ----------------
+      (".ctlpanel-box" (padding . "4px"))
+      (".ctl-card" (background-color . ,(c 'bg-dim)) (border-radius . "16px")
+       (padding . "14px") (margin . "6px") (box-shadow . ,card-shadow))
+      (".ctl-profile" (padding . "2px"))
+      (".ctl-pfp" (background-color . ,(c 'bg-active)) (border-radius . "100%")
+       (min-width . "58px") (min-height . "58px") (margin-right . "16px"))
+      (".ctl-pfp-ico" (font-size . "28px") (color . ,(c 'accent)))
+      (".ctl-user" (font-size . "24px") (font-weight . "bold") (color . ,(c 'accent)))
+      (".ctl-uptime" (color . ,(c 'fg-dim)))
+      (".ctl-power" (background-color . ,(c 'bg)) (border-radius . "14px")
+       (padding . "12px 8px") (margin-top . "14px"))
+      (".ctl-power .pw-a" (font-size . "22px") (padding . "4px 12px") (transition . "color 0.25s"))
+      (".ctl-power .lock" (color . ,(c 'blue)))
+      (".ctl-power .logout" (color . ,(c 'yellow)))
+      (".ctl-power .reboot" (color . ,(c 'magenta)))
+      (".ctl-power .suspend" (color . ,(c 'cyan)))
+      (".ctl-power .off" (color . ,(c 'red)))
+      (".ctl-power .pw-a:hover" (color . ,(c 'fg)))
 
-   ;; ---- control panel: cards (profile / stats / sliders) -------------------
-   (rule ".ctlpanel-box" (d "padding" "4px"))
-   (rule ".ctl-card" (d "background-color" (c 'bg-dim)) (d "border-radius" "16px")
-         (d "padding" "14px") (d "margin" "6px") (d "box-shadow" card-shadow))
-   (rule ".ctl-profile" (d "padding" "2px"))
-   (rule ".ctl-pfp" (d "background-color" (c 'bg-active)) (d "border-radius" "100%")
-         (d "min-width" "58px") (d "min-height" "58px") (d "margin-right" "16px"))
-   (rule ".ctl-pfp-ico" (d "font-size" "28px") (d "color" (c 'accent)))
-   (rule ".ctl-user" (d "font-size" "24px") (d "font-weight" "bold") (d "color" (c 'accent)))
-   (rule ".ctl-uptime" (d "color" (c 'fg-dim)))
-   (rule ".ctl-power" (d "background-color" (c 'bg)) (d "border-radius" "14px")
-         (d "padding" "12px 8px") (d "margin-top" "14px"))
-   (rule ".ctl-power .pw-a" (d "font-size" "22px") (d "padding" "4px 12px") (d "transition" "color 0.25s"))
-   (rule ".ctl-power .lock" (d "color" (c 'blue)))
-   (rule ".ctl-power .logout" (d "color" (c 'yellow)))
-   (rule ".ctl-power .reboot" (d "color" (c 'magenta)))
-   (rule ".ctl-power .suspend" (d "color" (c 'cyan)))
-   (rule ".ctl-power .off" (d "color" (c 'red)))
-   (rule ".ctl-power .pw-a:hover" (d "color" (c 'fg)))
+      ;; rings
+      (".ctl-rings" (padding . "4px 0"))
+      (".ctl-ring-box" (background-color . ,(c 'bg)) (border-radius . "14px")
+       (padding . "10px 8px") (margin . "0 4px"))
+      (".ctl-ring" (background-color . ,(c 'bg-active)) (border-radius . "100px") (margin-top . "4px"))
+      (".ctl-ring.cpu" (color . ,(c 'red)))
+      (".ctl-ring.ram" (color . ,(c 'blue)))
+      (".ctl-ring.disk" (color . ,(c 'green)))
+      (".ctl-ring.temp" (color . ,(c 'yellow)))
+      (".ctl-ring-ico" (font-size . "18px") (margin . "14px"))
+      (".ctl-ring-box.cpu .ctl-ring-ico, .ctl-ring-box.cpu .ctl-ring-lbl" (color . ,(c 'red)))
+      (".ctl-ring-box.ram .ctl-ring-ico, .ctl-ring-box.ram .ctl-ring-lbl" (color . ,(c 'blue)))
+      (".ctl-ring-box.disk .ctl-ring-ico, .ctl-ring-box.disk .ctl-ring-lbl" (color . ,(c 'green)))
+      (".ctl-ring-box.temp .ctl-ring-ico, .ctl-ring-box.temp .ctl-ring-lbl" (color . ,(c 'yellow)))
+      (".ctl-ring-lbl" (font-size . "11px") (margin-top . "6px"))
+      (".ctl-srow" (padding . "4px 8px"))
+      (".ctl-sico.vol" (color . ,(c 'accent)) (font-size . "17px"))
+      (".ctl-sico.bri" (color . ,(c 'yellow)) (font-size . "17px"))
+      (".ctl-scale trough" (background-color . ,(c 'bg))
+       (min-height . "10px") (min-width . "180px") (border-radius . "50px"))
+      (".ctl-scale.vol trough highlight" (background-color . ,(c 'accent)) (border-radius . "10px"))
+      (".ctl-scale.bri trough highlight" (background-color . ,(c 'yellow)) (border-radius . "10px"))
 
-   ;; rings: size comes from the icon font + margin, NOT min-width
-   (rule ".ctl-rings" (d "padding" "4px 0"))
-   (rule ".ctl-ring-box" (d "background-color" (c 'bg)) (d "border-radius" "14px")
-         (d "padding" "10px 8px") (d "margin" "0 4px"))
-   (rule ".ctl-ring" (d "background-color" (c 'bg-active)) (d "border-radius" "100px") (d "margin-top" "4px"))
-   (rule ".ctl-ring.cpu"  (d "color" (c 'red)))
-   (rule ".ctl-ring.ram"  (d "color" (c 'blue)))
-   (rule ".ctl-ring.disk" (d "color" (c 'green)))
-   (rule ".ctl-ring.temp" (d "color" (c 'yellow)))
-   (rule ".ctl-ring-ico" (d "font-size" "18px") (d "margin" "14px"))
-   (rule ".ctl-ring-box.cpu .ctl-ring-ico, .ctl-ring-box.cpu .ctl-ring-lbl"   (d "color" (c 'red)))
-   (rule ".ctl-ring-box.ram .ctl-ring-ico, .ctl-ring-box.ram .ctl-ring-lbl"   (d "color" (c 'blue)))
-   (rule ".ctl-ring-box.disk .ctl-ring-ico, .ctl-ring-box.disk .ctl-ring-lbl" (d "color" (c 'green)))
-   (rule ".ctl-ring-box.temp .ctl-ring-ico, .ctl-ring-box.temp .ctl-ring-lbl" (d "color" (c 'yellow)))
-   (rule ".ctl-ring-lbl" (d "font-size" "11px") (d "margin-top" "6px"))
-   (rule ".ctl-srow" (d "padding" "4px 8px"))
-   (rule ".ctl-sico.vol" (d "color" (c 'accent)) (d "font-size" "17px"))
-   (rule ".ctl-sico.bri" (d "color" (c 'yellow)) (d "font-size" "17px"))
-   (rule ".ctl-scale trough" (d "background-color" (c 'bg))
-         (d "min-height" "10px") (d "min-width" "180px") (d "border-radius" "50px"))
-   (rule ".ctl-scale.vol trough highlight" (d "background-color" (c 'accent)) (d "border-radius" "10px"))
-   (rule ".ctl-scale.bri trough highlight" (d "background-color" (c 'yellow)) (d "border-radius" "10px"))
-
-   ;; ---- echo strip (base; eww-style-overrides restyles it) -----------------
-   (rule ".echo" (d "background-color" (c 'bg)))
-   (rule ".echo-text" (d "color" (c 'fg)) (d "font-size" "13px") (d "padding" "0 12px 0 64px"))
-
-   (eww-style-overrides theme)))
+      ;; ---- echo strip (base; eww-style-overrides restyles it) --------------
+      (".echo" (background-color . ,(c 'bg)))
+      (".echo-text" (color . ,(c 'fg)) (font-size . "13px") (padding . "0 12px 0 64px")))
+    (eww-style-overrides theme))))
 
 ;;; The .yuck layout is authored as modules for editing, but `include' cannot
 ;;; work once deployed: home-xdg-configuration-files makes each file its own

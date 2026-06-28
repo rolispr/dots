@@ -277,6 +277,31 @@
 
 (defn mmss [s] (let [s (int (or s 0))] (format "%d:%02d" (quot s 60) (rem s 60))))
 
+(def art-cache-dir
+  (let [d (io/file (or (System/getenv "XDG_CACHE_HOME")
+                       (str (System/getenv "HOME") "/.cache"))
+                   "eww-media-art")]
+    (.mkdirs d) d))
+
+(defn embedded-art
+  "Extract the track's embedded cover art to a cached file via ffmpeg, keyed by
+  path. A .none marker records misses so the 1s poll never re-runs ffmpeg on a
+  track that has no embedded art."
+  [file]
+  (let [key  (format "%08x" (hash file))
+        jpg  (io/file art-cache-dir (str key ".jpg"))
+        none (io/file art-cache-dir (str key ".none"))]
+    (cond
+      (.exists jpg)  (str "file://" (.getAbsolutePath jpg))
+      (.exists none) nil
+      :else
+      (let [r (try (p/sh "ffmpeg" "-y" "-loglevel" "quiet" "-i" file
+                         "-an" "-vcodec" "copy" (.getAbsolutePath jpg))
+                   (catch Exception _ {:exit 1}))]
+        (if (and (zero? (:exit r)) (.exists jpg) (pos? (.length jpg)))
+          (str "file://" (.getAbsolutePath jpg))
+          (do (.delete jpg) (spit none "") nil))))))
+
 (defn cover-for [file]
   (try
     (when (seq file)
@@ -284,10 +309,11 @@
             cover? #{"cover.jpg" "cover.jpeg" "cover.png"
                      "folder.jpg" "folder.jpeg" "folder.png"
                      "front.jpg" "front.jpeg" "front.png"}]
-        (when (and dir (.isDirectory dir))
-          (some (fn [f] (when (cover? (str/lower-case (.getName f)))
-                          (str "file://" (.getAbsolutePath f))))
-                (.listFiles dir)))))
+        (or (when (and dir (.isDirectory dir))
+              (some (fn [f] (when (cover? (str/lower-case (.getName f)))
+                              (str "file://" (.getAbsolutePath f))))
+                    (.listFiles dir)))
+            (embedded-art file))))
     (catch Exception _ nil)))
 
 (defn media []
