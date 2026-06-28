@@ -1,184 +1,108 @@
-;;; Niri configuration emitted as KDL via a small Lisp DSL.
-;;; Adapted from SSS's (sss niri); palette/i18n deps stripped, theme
+;;; Niri configuration as KDL data (see (dots config kdl)). Each section is a
+;;; plain SXML-shaped node; keybinds come from the `keybind' helper. Theme is
 ;;; consumed as a <theme> record.
 ;;;
-;;; Entry point: (niri-capability #:theme … #:keyboard-layout … …)
-;;; returns a list of (path plain-file) pairs suitable for splicing
-;;; into home-xdg-configuration-files-service-type.
+;;; Entry point: (niri-capability #:theme ... #:keyboard-layout ... ...)
+;;; returns a list of (path plain-file) pairs for home-xdg-configuration-files.
 
 (define-module (dots home services niri)
-  #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module (guix gexp)
   #:use-module (dots theme base)
   #:use-module (dots home desktop)
+  #:use-module (dots config kdl)
   #:export (niri-capability
             niri-config
-            serialize-kdl
-            <rule> make-rule rule? rul
-            rule-selector rule-declarations
-            <declaration> make-declaration declaration? dec
-            declaration-property declaration-value
-            <declaration-prop> make-declaration-prop declaration-prop? prop
-            declaration-prop-props
-            bnd serialize-bindings
+            keybind
             default-niri-bindings
             default-niri-startups
             default-niri-xkb-options))
 
 
-;;; KDL record types
+;;; keybind -- build one KDL bind node: (Mod+Return (spawn-sh "alacritty")).
+;;; #:run CMD is sugar for the spawn-sh action; #:act gives any other action
+;;; node directly (e.g. '(close-window) or '(set-column-width "-10%")).
 
-(define-record-type <rule>
-  (make-rule selector declarations) rule?
-  (selector     rule-selector)
-  (declarations rule-declarations))
-
-(define-record-type <declaration>
-  (make-declaration property value) declaration?
-  (property declaration-property)
-  (value    declaration-value))
-
-(define-record-type <declaration-prop>
-  (make-declaration-prop props) declaration-prop?
-  (props declaration-prop-props))
-
-(define dec  make-declaration)
-(define prop make-declaration-prop)
-
-(define (flatten-list xs)
-  (cond ((null? xs) '())
-        ((pair? xs) (append (flatten-list (car xs))
-                            (flatten-list (cdr xs))))
-        (else (list xs))))
-
-(define (rul selector . args)
-  (make-rule selector (flatten-list args)))
+(define* (keybind #:key (mod "") key run act locked)
+  (let ((name   (if (string-null? mod) key (string-append mod "+" key)))
+        (action (if run (list 'spawn-sh run) act)))
+    (if locked
+        (list name '(@ (allow-when-locked true)) action)
+        (list name action))))
 
 
-;;; spawn helpers — emit the KDL command literally
-
-(define (spawn-sh cmd)
-  (format #f "spawn-sh \"~a\"" cmd))
-
-(define (spawn-sh-at-startup cmd)
-  (format #f "spawn-sh-at-startup \"~a\"" cmd))
-
-
-;;; bindings
-
-(define* (bnd #:key (mod "") bind cmd
-              (allow-when-locked? #f)
-              (allow-inhibiting? #t))
-  `((mod . ,mod) (bind . ,bind) (cmd . ,cmd)
-    (allow-when-locked? . ,allow-when-locked?)
-    (allow-inhibiting? . ,allow-inhibiting?)))
-
-(define (serialize-bindings xs)
-  (string-join
-   (map (lambda (b)
-          (let ((mod      (assq-ref b 'mod))
-                (bind     (assq-ref b 'bind))
-                (cmd      (assq-ref b 'cmd))
-                (locked?  (assq-ref b 'allow-when-locked?))
-                (inhibit? (assq-ref b 'allow-inhibiting?)))
-            (format #f "~a~a~a~a{ ~a; }"
-                    mod
-                    (cond ((not bind) "")
-                          ((string=? mod "") bind)
-                          (else (string-append "+" bind)))
-                    (if locked?  " allow-when-locked=true "  " ")
-                    (if (not inhibit?) " allow-inhibiting=false " " ")
-                    cmd)))
-        xs)
-   "\n  "))
-
-
-;;; default binding set — niri-native (column model)
+;;; default binding set -- niri-native (column model)
 
 (define (desktop-launch-bindings desktop)
   "Return the niri keybindings that launch DESKTOP's terminal, picker, and
 editor, so the keys agree with the rest of the session."
   (list
-   (bnd #:mod "Mod" #:bind "Return" #:cmd (spawn-sh (desktop-launch-terminal desktop)))
-   (bnd #:mod "Mod" #:bind "D"      #:cmd (spawn-sh (desktop-launch-picker desktop)))
-   (bnd #:mod "Mod" #:bind "E"      #:cmd (spawn-sh (desktop-launch-editor desktop)))))
+   (keybind #:mod "Mod" #:key "Return" #:run (desktop-launch-terminal desktop))
+   (keybind #:mod "Mod" #:key "D"      #:run (desktop-launch-picker desktop))
+   (keybind #:mod "Mod" #:key "E"      #:run (desktop-launch-editor desktop))))
 
 (define %niri-base-bindings
   (list
    ;; session
-   (bnd #:mod "Mod"       #:bind "Q" #:cmd "close-window")
-   (bnd #:mod "Mod+Shift" #:bind "E" #:cmd "quit")
-   (bnd #:mod "Mod"       #:bind "O" #:cmd "toggle-overview")
-   (bnd #:mod "Mod"       #:bind "W"
-        #:cmd (spawn-sh "bash ~/.config/rice/wallpaper"))
-   (bnd #:mod "Mod+Shift" #:bind "R"
-        #:cmd (spawn-sh "niri msg action load-config-file; eww reload; makoctl reload"))
+   (keybind #:mod "Mod"       #:key "Q" #:act '(close-window))
+   (keybind #:mod "Mod+Shift" #:key "E" #:act '(quit))
+   (keybind #:mod "Mod"       #:key "O" #:act '(toggle-overview))
+   (keybind #:mod "Mod"       #:key "W" #:run "bash ~/.config/rice/wallpaper")
+   (keybind #:mod "Mod+Shift" #:key "R"
+            #:run "niri msg action load-config-file; eww reload; makoctl reload")
 
-   ;; focus — Mod+H/L between columns, Mod+J/K within a column
-   (bnd #:mod "Mod" #:bind "H" #:cmd "focus-column-left")
-   (bnd #:mod "Mod" #:bind "L" #:cmd "focus-column-right")
-   (bnd #:mod "Mod" #:bind "J" #:cmd "focus-window-down")
-   (bnd #:mod "Mod" #:bind "K" #:cmd "focus-window-up")
+   ;; focus -- Mod+H/L between columns, Mod+J/K within a column
+   (keybind #:mod "Mod" #:key "H" #:act '(focus-column-left))
+   (keybind #:mod "Mod" #:key "L" #:act '(focus-column-right))
+   (keybind #:mod "Mod" #:key "J" #:act '(focus-window-down))
+   (keybind #:mod "Mod" #:key "K" #:act '(focus-window-up))
 
    ;; move
-   (bnd #:mod "Mod+Shift" #:bind "H" #:cmd "move-column-left")
-   (bnd #:mod "Mod+Shift" #:bind "L" #:cmd "move-column-right")
-   (bnd #:mod "Mod+Shift" #:bind "J" #:cmd "move-window-down")
-   (bnd #:mod "Mod+Shift" #:bind "K" #:cmd "move-window-up")
+   (keybind #:mod "Mod+Shift" #:key "H" #:act '(move-column-left))
+   (keybind #:mod "Mod+Shift" #:key "L" #:act '(move-column-right))
+   (keybind #:mod "Mod+Shift" #:key "J" #:act '(move-window-down))
+   (keybind #:mod "Mod+Shift" #:key "K" #:act '(move-window-up))
 
    ;; column composition
-   (bnd #:mod "Mod" #:bind "comma"  #:cmd "consume-window-into-column")
-   (bnd #:mod "Mod" #:bind "period" #:cmd "expel-window-from-column")
-   (bnd #:mod "Mod" #:bind "C"      #:cmd "center-column")
+   (keybind #:mod "Mod" #:key "comma"  #:act '(consume-window-into-column))
+   (keybind #:mod "Mod" #:key "period" #:act '(expel-window-from-column))
+   (keybind #:mod "Mod" #:key "C"      #:act '(center-column))
 
    ;; column width / fullscreen
-   (bnd #:mod "Mod"       #:bind "R"     #:cmd "switch-preset-column-width")
-   (bnd #:mod "Mod"       #:bind "F"     #:cmd "maximize-column")
-   (bnd #:mod "Mod+Shift" #:bind "F"     #:cmd "fullscreen-window")
-   (bnd #:mod "Mod"       #:bind "minus" #:cmd "set-column-width \"-10%\"")
-   (bnd #:mod "Mod"       #:bind "equal" #:cmd "set-column-width \"+10%\"")
+   (keybind #:mod "Mod"       #:key "R"     #:act '(switch-preset-column-width))
+   (keybind #:mod "Mod"       #:key "F"     #:act '(maximize-column))
+   (keybind #:mod "Mod+Shift" #:key "F"     #:act '(fullscreen-window))
+   (keybind #:mod "Mod"       #:key "minus" #:act '(set-column-width "-10%"))
+   (keybind #:mod "Mod"       #:key "equal" #:act '(set-column-width "+10%"))
 
    ;; floating
-   (bnd #:mod "Mod"       #:bind "space" #:cmd "toggle-window-floating")
-   (bnd #:mod "Mod+Shift" #:bind "space" #:cmd "switch-focus-between-floating-and-tiling")
+   (keybind #:mod "Mod"       #:key "space" #:act '(toggle-window-floating))
+   (keybind #:mod "Mod+Shift" #:key "space" #:act '(switch-focus-between-floating-and-tiling))
 
    ;; workspace cycle
-   (bnd #:mod "Mod" #:bind "Page_Down" #:cmd "focus-workspace-down")
-   (bnd #:mod "Mod" #:bind "Page_Up"   #:cmd "focus-workspace-up")
+   (keybind #:mod "Mod" #:key "Page_Down" #:act '(focus-workspace-down))
+   (keybind #:mod "Mod" #:key "Page_Up"   #:act '(focus-workspace-up))
 
    ;; screenshot
-   (bnd                   #:bind "Print" #:cmd "screenshot")
-   (bnd #:mod "Mod"       #:bind "Print" #:cmd "screenshot-screen")
-   (bnd #:mod "Mod+Shift" #:bind "Print" #:cmd "screenshot-window")
+   (keybind                   #:key "Print" #:act '(screenshot))
+   (keybind #:mod "Mod"       #:key "Print" #:act '(screenshot-screen))
+   (keybind #:mod "Mod+Shift" #:key "Print" #:act '(screenshot-window))
 
    ;; brightness / audio
-   (bnd #:bind "XF86MonBrightnessUp"
-        #:cmd (spawn-sh "brightnessctl s +10%")
-        #:allow-when-locked? #t)
-   (bnd #:bind "XF86MonBrightnessDown"
-        #:cmd (spawn-sh "brightnessctl s 10%-")
-        #:allow-when-locked? #t)
-   (bnd #:bind "XF86AudioRaiseVolume"
-        #:cmd (spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")
-        #:allow-when-locked? #t)
-   (bnd #:bind "XF86AudioLowerVolume"
-        #:cmd (spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-")
-        #:allow-when-locked? #t)
-   (bnd #:bind "XF86AudioMute"
-        #:cmd (spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")
-        #:allow-when-locked? #t)))
+   (keybind #:key "XF86MonBrightnessUp"   #:locked #t #:run "brightnessctl s +10%")
+   (keybind #:key "XF86MonBrightnessDown" #:locked #t #:run "brightnessctl s 10%-")
+   (keybind #:key "XF86AudioRaiseVolume"  #:locked #t #:run "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")
+   (keybind #:key "XF86AudioLowerVolume"  #:locked #t #:run "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-")
+   (keybind #:key "XF86AudioMute"         #:locked #t #:run "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")))
 
 (define (numbered-workspace-bindings)
   (append-map
    (lambda (n)
      (let ((k (if (= n 10) "0" (number->string n))))
        (list
-        (bnd #:mod "Mod"       #:bind k
-             #:cmd (format #f "focus-workspace ~a" n))
-        (bnd #:mod "Mod+Shift" #:bind k
-             #:cmd (format #f "move-column-to-workspace ~a" n)))))
+        (keybind #:mod "Mod"       #:key k #:act `(focus-workspace ,n))
+        (keybind #:mod "Mod+Shift" #:key k #:act `(move-column-to-workspace ,n)))))
    (iota 10 1)))
 
 (define default-niri-bindings
@@ -204,131 +128,59 @@ WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=~a"
 (define default-niri-xkb-options "ctrl:swapcaps")
 
 
-;;; config sections
+;;; config sections, as KDL nodes
 
-(define* (niri-input-config #:key keyboard-layout xkb-options)
-  (rul 'input
-       (rul 'keyboard
-            (rul 'xkb
-                 (dec 'layout  keyboard-layout)
-                 (dec 'options (or xkb-options ""))))
-       (rul 'touchpad
-            (dec 'tap #t))
-       (dec 'warp-mouse-to-focus #t)))
+(define (input-node keyboard-layout xkb-options)
+  `(input
+    (keyboard (xkb (layout ,keyboard-layout) (options ,(or xkb-options ""))))
+    (touchpad (tap))
+    (warp-mouse-to-focus)))
 
-(define* (niri-layout-config #:key theme)
-  (rul 'layout
-       (dec 'background-color "transparent")
-       (dec 'gaps (shape-gaps (theme-shape theme)))
-       (dec 'center-focused-column "never")
-       (rul 'preset-column-widths
-            (dec 'proportion 0.333333)
-            (dec 'proportion 0.5)
-            (dec 'proportion 0.666666))
-       (rul 'default-column-width
-            (dec 'proportion 0.666666))
-       (rul 'focus-ring
-            (dec 'width (shape-border (theme-shape theme)))
-            (dec 'active-color   (theme-color theme 'accent))
-            (dec 'inactive-color (theme-color theme 'bg-active)))
-       (rul 'shadow
-            (dec 'on #t)
-            (dec 'softness 30)
-            (dec 'spread 5)
-            (dec 'offset (prop '((x 0) (y 5))))
-            (dec 'color "#0007"))
-       (rul 'struts
-            (dec 'left 4) (dec 'right 4)
-            (dec 'top 4)  (dec 'bottom 4))))
+(define (layout-node theme)
+  `(layout
+    (background-color "transparent")
+    (gaps ,(shape-gaps (theme-shape theme)))
+    (center-focused-column "never")
+    (preset-column-widths (proportion 0.333333) (proportion 0.5) (proportion 0.666666))
+    (default-column-width (proportion 0.666666))
+    (focus-ring (width ,(shape-border (theme-shape theme)))
+                (active-color ,(theme-color theme 'accent))
+                (inactive-color ,(theme-color theme 'bg-active)))
+    (shadow (on) (softness 30) (spread 5) (offset (@ (x 0) (y 5))) (color "#0007"))
+    (struts (left 4) (right 4) (top 4) (bottom 4))))
 
-(define* (niri-overview-config #:key theme)
-  ;; The zoomed-out view: a deliberate dark field (bg-dim) behind the
-  ;; workspace tiles so the surround reads as chrome, not unstyled gray,
-  ;; and a shadow on each tile so the wallpaper'd workspaces float.
-  (rul 'overview
-       (dec 'zoom 0.5)
-       (dec 'backdrop-color (theme-color theme 'bg-dim))
-       (rul 'workspace-shadow
-            (dec 'softness 40)
-            (dec 'spread 10)
-            (dec 'offset (prop '((x 0) (y 10))))
-            (dec 'color "#00000060"))))
+(define (overview-node theme)
+  ;; The zoomed-out view: a deliberate dark field (bg-dim) behind the workspace
+  ;; tiles, and a shadow on each tile so the wallpaper'd workspaces float.
+  `(overview
+    (zoom 0.5)
+    (backdrop-color ,(theme-color theme 'bg-dim))
+    (workspace-shadow (softness 40) (spread 10) (offset (@ (x 0) (y 10))) (color "#00000060"))))
+
+(define (window-rule-node theme)
+  `(window-rule
+    (geometry-corner-radius ,(shape-radius (theme-shape theme)))
+    (clip-to-geometry true)
+    (draw-border-with-background false)))
 
 (define (niri-intro)
-  "// Niri configuration — generated from (dots home services niri).
+  "// Niri configuration - generated from (dots home services niri).
 // Do not edit by hand; edit src/dots/home/services/niri.scm instead.")
 
-(define (serialized-startups xs)
-  (string-join (map spawn-sh-at-startup xs) "\n"))
-
-(define* (niri-config #:key theme
-                      keyboard-layout
-                      xkb-options
-                      (bindings '())
-                      (startups '()))
-  (list (niri-intro)
-        (niri-input-config  #:keyboard-layout keyboard-layout
-                            #:xkb-options     xkb-options)
-        (niri-layout-config #:theme theme)
-        (niri-overview-config #:theme theme)
-        (rul 'hotkey-overlay (dec 'skip-at-startup #t))
-        (dec 'prefer-no-csd #t)
-        (dec 'screenshot-path
-             "~/pictures/screenshots/screen-%Y-%m-%d-%H-%M-%S.png")
-        (rul 'animations (dec 'slowdown 1.0))
-        (rul 'binds (serialize-bindings bindings))
-        (rul 'window-rule
-             (dec 'geometry-corner-radius (shape-radius (theme-shape theme)))
-             (dec 'clip-to-geometry 'true)
-             (dec 'draw-border-with-background 'false))
-        (serialized-startups startups)))
-
-
-;;; KDL serializer
-
-(define* (serialize-kdl xs #:key (indent ""))
-  (let ((new-indent (string-append indent "  ")))
-    (cond
-     ((list? xs)
-      (map (lambda (x) (serialize-kdl x #:indent new-indent)) xs))
-     ((rule? xs)
-      (format #f "~a {\n~a~a\n~a}"
-              (rule-selector xs)
-              indent
-              (cond
-               ((rule? (rule-declarations xs))
-                (serialize-kdl (rule-declarations xs) #:indent new-indent))
-               ((list? (rule-declarations xs))
-                (string-join
-                 (map (lambda (xx)
-                        (cond ((rule? xx)
-                               (serialize-kdl xx #:indent new-indent))
-                              ((declaration? xx)
-                               (serialize-declaration xx))
-                              (else (format #f "~a" xx))))
-                      (rule-declarations xs))
-                 (string-append "\n" indent)))
-               (else (serialize-declaration (rule-declarations xs))))
-              (if (>= (string-length indent) 2)
-                  (string-drop indent 2)
-                  "")))
-     ((declaration? xs)
-      (serialize-declaration xs))
-     (else (format #f "~a" xs)))))
-
-(define (serialize-declaration xs)
-  (format #f "~a ~a"
-          (declaration-property xs)
-          (cond
-           ((eq? #t (declaration-value xs)) "")
-           ((declaration-prop? (declaration-value xs))
-            (string-join (map (lambda (p)
-                                (format #f "~a=~a" (car p) (cadr p)))
-                              (declaration-prop-props (declaration-value xs)))
-                         " "))
-           ((string? (declaration-value xs))
-            (format #f "\"~a\"" (declaration-value xs)))
-           (else (declaration-value xs)))))
+(define* (niri-config #:key theme keyboard-layout xkb-options
+                      (bindings '()) (startups '()))
+  "Return the list of KDL nodes for the niri config."
+  (append
+   (list (input-node keyboard-layout xkb-options)
+         (layout-node theme)
+         (overview-node theme)
+         '(hotkey-overlay (skip-at-startup))
+         '(prefer-no-csd)
+         (list 'screenshot-path "~/pictures/screenshots/screen-%Y-%m-%d-%H-%M-%S.png")
+         '(animations (slowdown 1.0))
+         (cons 'binds bindings)
+         (window-rule-node theme))
+   (map (lambda (cmd) (list 'spawn-sh-at-startup cmd)) startups)))
 
 
 ;;; the home-files capability
@@ -341,11 +193,10 @@ WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=~a"
   `(("niri/config.kdl"
      ,(plain-file
        "config.kdl"
-       (string-join
-        (serialize-kdl
-         (niri-config #:theme           theme
-                      #:keyboard-layout keyboard-layout
-                      #:xkb-options     xkb-options
-                      #:bindings        bindings
-                      #:startups        startups))
-        "\n")))))
+       (string-append
+        (niri-intro) "\n"
+        (kdl (niri-config #:theme           theme
+                          #:keyboard-layout keyboard-layout
+                          #:xkb-options     xkb-options
+                          #:bindings        bindings
+                          #:startups        startups)))))))

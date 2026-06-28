@@ -7,84 +7,64 @@
   #:use-module (guix gexp)
   #:use-module (ice-9 format)
   #:use-module (dots theme base)
+  #:use-module (dots config ini)
   #:export (gtk-settings
             gtk3-css
             gtk4-css
             gtk-capability))
 
+(define (define-colors pairs)
+  "Emit GTK @define-color lines from (TOKEN . COLOUR) pairs."
+  (string-join
+   (map (lambda (p) (format #f "@define-color ~a ~a;" (car p) (cdr p))) pairs)
+   "\n"))
+
 (define (gtk-settings theme)
   "Return settings.ini contents: dark preference, icon/cursor themes, and the
 UI font, from THEME."
   (define f (theme-fonts theme))
-  (format #f "\
-[Settings]
-gtk-application-prefer-dark-theme=1
-gtk-theme-name=~a
-gtk-icon-theme-name=~a
-gtk-cursor-theme-name=~a
-gtk-font-name=~a ~a
-"
-          (theme-gtk theme) (theme-icons theme) (theme-cursor theme)
-          (fonts-sans f) (fonts-size f)))
+  (ini
+   `((Settings (gtk-application-prefer-dark-theme . 1)
+               (gtk-theme-name . ,(theme-gtk theme))
+               (gtk-icon-theme-name . ,(theme-icons theme))
+               (gtk-cursor-theme-name . ,(theme-cursor theme))
+               (gtk-font-name . ,(format #f "~a ~a" (fonts-sans f) (fonts-size f)))))))
 
 (define (gtk3-css theme)
   "Return gtk-3.0/gtk.css: override GTK3's named theme colours from THEME."
   (define (c role) (theme-color theme role))
-  (format #f "\
-@define-color theme_bg_color ~a;
-@define-color theme_base_color ~a;
-@define-color theme_fg_color ~a;
-@define-color theme_text_color ~a;
-@define-color theme_selected_bg_color ~a;
-@define-color theme_selected_fg_color ~a;
-@define-color insensitive_bg_color ~a;
-@define-color insensitive_fg_color ~a;
-@define-color borders ~a;
-@define-color warning_color ~a;
-@define-color error_color ~a;
-@define-color success_color ~a;
-"
-          (c 'bg) (c 'bg-dim) (c 'fg) (c 'fg)
-          (c 'accent) (c 'accent-fg)
-          (c 'bg-dim) (c 'fg-dim) (c 'border)
-          (c 'yellow) (c 'red) (c 'green)))
+  (define-colors
+    `((theme_bg_color . ,(c 'bg))
+      (theme_base_color . ,(c 'bg-dim))
+      (theme_fg_color . ,(c 'fg))
+      (theme_text_color . ,(c 'fg))
+      (theme_selected_bg_color . ,(c 'accent))
+      (theme_selected_fg_color . ,(c 'accent-fg))
+      (insensitive_bg_color . ,(c 'bg-dim))
+      (insensitive_fg_color . ,(c 'fg-dim))
+      (borders . ,(c 'border))
+      (warning_color . ,(c 'yellow))
+      (error_color . ,(c 'red))
+      (success_color . ,(c 'green)))))
 
 (define (gtk4-css theme)
   "Return gtk-4.0/gtk.css: override libadwaita's named colours from THEME, so
 GTK4 apps follow the palette within libadwaita's structure."
   (define (c role) (theme-color theme role))
-  (format #f "\
-@define-color window_bg_color ~a;
-@define-color window_fg_color ~a;
-@define-color view_bg_color ~a;
-@define-color view_fg_color ~a;
-@define-color headerbar_bg_color ~a;
-@define-color headerbar_fg_color ~a;
-@define-color sidebar_bg_color ~a;
-@define-color sidebar_fg_color ~a;
-@define-color card_bg_color ~a;
-@define-color card_fg_color ~a;
-@define-color popover_bg_color ~a;
-@define-color popover_fg_color ~a;
-@define-color dialog_bg_color ~a;
-@define-color dialog_fg_color ~a;
-@define-color accent_bg_color ~a;
-@define-color accent_fg_color ~a;
-@define-color accent_color ~a;
-@define-color destructive_bg_color ~a;
-@define-color success_color ~a;
-@define-color warning_color ~a;
-@define-color error_color ~a;
-"
-          (c 'bg) (c 'fg)
-          (c 'bg-dim) (c 'fg)
-          (c 'bg-alt) (c 'fg)
-          (c 'bg-dim) (c 'fg)
-          (c 'bg-alt) (c 'fg)
-          (c 'bg-alt) (c 'fg)
-          (c 'bg-alt) (c 'fg)
-          (c 'accent) (c 'accent-fg) (c 'fg-alt)
-          (c 'red) (c 'green) (c 'yellow) (c 'red)))
+  (define-colors
+    `((window_bg_color . ,(c 'bg)) (window_fg_color . ,(c 'fg))
+      (view_bg_color . ,(c 'bg-dim)) (view_fg_color . ,(c 'fg))
+      (headerbar_bg_color . ,(c 'bg-alt)) (headerbar_fg_color . ,(c 'fg))
+      (sidebar_bg_color . ,(c 'bg-dim)) (sidebar_fg_color . ,(c 'fg))
+      (card_bg_color . ,(c 'bg-alt)) (card_fg_color . ,(c 'fg))
+      (popover_bg_color . ,(c 'bg-alt)) (popover_fg_color . ,(c 'fg))
+      (dialog_bg_color . ,(c 'bg-alt)) (dialog_fg_color . ,(c 'fg))
+      (accent_bg_color . ,(c 'accent)) (accent_fg_color . ,(c 'accent-fg))
+      (accent_color . ,(c 'fg-alt))
+      (destructive_bg_color . ,(c 'red))
+      (success_color . ,(c 'green))
+      (warning_color . ,(c 'yellow))
+      (error_color . ,(c 'red)))))
 
 (define (gtk-capability theme)
   "Return home-xdg-configuration-files entries that skin GTK3 and GTK4 apps

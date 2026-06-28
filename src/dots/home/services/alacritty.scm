@@ -4,8 +4,8 @@
 
 (define-module (dots home services alacritty)
   #:use-module (guix gexp)
-  #:use-module (ice-9 format)
   #:use-module (dots theme base)
+  #:use-module (dots config toml)
   #:export (alacritty-config
             alacritty-capability))
 
@@ -13,47 +13,19 @@
   "Return the alacritty.toml contents themed from THEME."
   (define (c role) (theme-color theme role))
   (define font (theme-fonts theme))
-  (format #f "\
-[font]
-size = ~a
-[font.normal]
-family = ~s
-
-[colors.primary]
-background = ~s
-foreground = ~s
-
-[colors.cursor]
-text = ~s
-cursor = ~s
-
-[colors.normal]
-black = ~s
-red = ~s
-green = ~s
-yellow = ~s
-blue = ~s
-magenta = ~s
-cyan = ~s
-white = ~s
-
-[colors.bright]
-black = ~s
-red = ~s
-green = ~s
-yellow = ~s
-blue = ~s
-magenta = ~s
-cyan = ~s
-white = ~s
-"
-          (fonts-size font) (fonts-mono font)
-          (c 'bg) (c 'fg)
-          (c 'bg) (c 'cursor)
-          (c 'black) (c 'red) (c 'green) (c 'yellow)
-          (c 'blue) (c 'magenta) (c 'cyan) (c 'white)
-          (c 'bright-black) (c 'bright-red) (c 'bright-green) (c 'bright-yellow)
-          (c 'bright-blue) (c 'bright-magenta) (c 'bright-cyan) (c 'bright-white)))
+  (toml
+   `((font          (size . ,(fonts-size font)))
+     (font.normal   (family . ,(fonts-mono font)))
+     (colors.primary (background . ,(c 'bg)) (foreground . ,(c 'fg)))
+     (colors.cursor  (text . ,(c 'bg)) (cursor . ,(c 'cursor)))
+     (colors.normal  (black . ,(c 'black)) (red . ,(c 'red))
+                     (green . ,(c 'green)) (yellow . ,(c 'yellow))
+                     (blue . ,(c 'blue)) (magenta . ,(c 'magenta))
+                     (cyan . ,(c 'cyan)) (white . ,(c 'white)))
+     (colors.bright  (black . ,(c 'bright-black)) (red . ,(c 'bright-red))
+                     (green . ,(c 'bright-green)) (yellow . ,(c 'bright-yellow))
+                     (blue . ,(c 'bright-blue)) (magenta . ,(c 'bright-magenta))
+                     (cyan . ,(c 'bright-cyan)) (white . ,(c 'bright-white))))))
 
 (define (alacritty-capability theme)
   "Return home-xdg-configuration-files entries for alacritty themed from
