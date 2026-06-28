@@ -41,16 +41,28 @@
       (set-frame-position (selected-frame) 0 0)
       (set-frame-size (selected-frame) 120 40)))))
 
-;;;; terminal specific
-(unless (display-graphic-p)
-  (defun xterm-title-update ()
-    (interactive)
-    (send-string-to-terminal (concat "\033]1; " (buffer-name) "\007"))
-    (if buffer-file-name
-        (send-string-to-terminal (concat "\033]2; " (buffer-file-name) "\007"))
-      (send-string-to-terminal (concat "\033]2; " (buffer-name) "\007"))))
-  (add-hook 'post-command-hook 'xterm-title-update)
-  (set-face-background 'default "unspecified-bg"))
+;;;; terminal specific -- applied PER FRAME, never globally at load. Under the
+;;;; emacs daemon (display-graphic-p) is nil at init, so the old unconditional
+;;;; (set-face-background 'default "unspecified-bg") poisoned the global default
+;;;; face and made every later GUI frame fail with (error "Undefined color").
+(defun xterm-title-update ()
+  (interactive)
+  (send-string-to-terminal (concat "\033]1; " (buffer-name) "\007"))
+  (if buffer-file-name
+      (send-string-to-terminal (concat "\033]2; " (buffer-file-name) "\007"))
+    (send-string-to-terminal (concat "\033]2; " (buffer-name) "\007"))))
+
+(defun terminal-frame-setup (&optional frame)
+  "Apply terminal-only tweaks to FRAME, leaving GUI frames untouched.
+Sets the background frame-locally (passing FRAME), so it never pollutes the
+global default face the daemon's GUI frames inherit."
+  (let ((frame (or frame (selected-frame))))
+    (unless (display-graphic-p frame)
+      (set-face-background 'default "unspecified-bg" frame)
+      (add-hook 'post-command-hook 'xterm-title-update))))
+
+(add-hook 'after-make-frame-functions 'terminal-frame-setup)
+(terminal-frame-setup)
 
 ;;;; Basic Defaults
 (setopt auto-hscroll-mode 'current-line
@@ -1686,7 +1698,7 @@ function."
   :ensure nil
   :after (evil lispy transient)
   :hook ((emacs-lisp-mode lisp-mode scheme-mode
-          clojure-mode clojurescript-mode fennel-mode)
+                          clojure-mode clojurescript-mode fennel-mode)
          . lispyville-mode)
   :init
   (setq lispyville-key-theme
@@ -1928,7 +1940,6 @@ function."
   (ready-player-mode +1))
 ;;;; emms 
 (use-package emms
-  :disabled
   :init
   (add-hook 'emms-player-started-hook 'emms-show)
   (setq emms-show-format "Playing: %s")
